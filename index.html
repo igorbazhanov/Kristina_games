@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kristina Games</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(145deg, #8ed8ff, #fff0a8);
+      color: #263238;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(900px, 100%);
+      background: rgba(255, 255, 255, 0.86);
+      border: 5px solid white;
+      border-radius: 34px;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.16);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(34px, 7vw, 64px);
+      line-height: 1;
+      font-weight: 1000;
+      color: #2c6fc9;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: clamp(16px, 3vw, 22px);
+      font-weight: 800;
+      color: #546e7a;
+      margin-bottom: 26px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .game-card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      background: white;
+      border: 4px solid white;
+      border-radius: 26px;
+      padding: 22px;
+      min-height: 150px;
+      box-shadow: 0 8px 0 rgba(0,0,0,0.10), 0 12px 22px rgba(0,0,0,0.12);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 0 rgba(0,0,0,0.10), 0 16px 28px rgba(0,0,0,0.14);
+    }
+
+    .emoji {
+      font-size: 54px;
+      margin-bottom: 12px;
+    }
+
+    .name {
+      font-size: 24px;
+      font-weight: 1000;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+
+    .file {
+      font-size: 14px;
+      font-weight: 700;
+      color: #78909c;
+      word-break: break-word;
+    }
+
+    .status {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      padding: 24px;
+      color: #546e7a;
+    }
+
+    .manual {
+      margin-top: 22px;
+      padding: 16px;
+      border-radius: 20px;
+      background: #eef8ff;
+      color: #456;
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    code {
+      background: rgba(255,255,255,0.8);
+      border-radius: 8px;
+      padding: 2px 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Kristina Games</h1>
+    <div class="subtitle">Choose a game to play</div>
+
+    <div id="status" class="status">Loading games...</div>
+    <div id="games" class="grid"></div>
+
+    <div class="manual">
+      New games will appear here automatically after you push new <code>.html</code> files to this public GitHub repository.
+      The file <code>index.html</code> is hidden from the list.
+    </div>
+  </main>
+
+  <script>
+    const OWNER = "igorbazhanov";
+    const REPO = "Kristina_games";
+    const BRANCH = "main";
+
+    const gamesEl = document.getElementById("games");
+    const statusEl = document.getElementById("status");
+
+    const emojiByName = [
+      { test: /arabic|араб/i, emoji: "🐰" },
+      { test: /bounce|letter/i, emoji: "🔤" },
+      { test: /memo|memory|match/i, emoji: "🧠" },
+      { test: /english/i, emoji: "🇬🇧" },
+      { test: /word/i, emoji: "📚" },
+      { test: /game/i, emoji: "🎮" }
+    ];
+
+    function niceName(filename) {
+      return filename
+        .replace(/\.html$/i, "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function emojiFor(filename) {
+      const found = emojiByName.find(x => x.test.test(filename));
+      return found ? found.emoji : "🎮";
+    }
+
+    async function loadGames() {
+      const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/?ref=${BRANCH}`;
+
+      try {
+        const response = await fetch(apiUrl, { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error("GitHub API error: " + response.status);
+        }
+
+        const files = await response.json();
+
+        const htmlFiles = files
+          .filter(file =>
+            file.type === "file" &&
+            file.name.toLowerCase().endsWith(".html") &&
+            file.name.toLowerCase() !== "index.html"
+          )
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        statusEl.style.display = "none";
+        gamesEl.innerHTML = "";
+
+        if (htmlFiles.length === 0) {
+          statusEl.style.display = "block";
+          statusEl.textContent = "No games found yet. Add .html files to the repo.";
+          return;
+        }
+
+        htmlFiles.forEach(file => {
+          const a = document.createElement("a");
+          a.className = "game-card";
+          a.href = encodeURIComponent(file.name);
+          a.innerHTML = `
+            <div class="emoji">${emojiFor(file.name)}</div>
+            <div class="name">${niceName(file.name)}</div>
+            <div class="file">${file.name}</div>
+          `;
+          gamesEl.appendChild(a);
+        });
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = "Could not load games. Check that the repo is public and GitHub Pages is enabled.";
+      }
+    }
+
+    loadGames();
+  </script>
+</body>
+</html>
