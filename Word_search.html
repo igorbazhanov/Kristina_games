@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Kids Word Search</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:linear-gradient(145deg,#8ed8ff,#fff0a8);display:flex;align-items:center;justify-content:center;color:#263238;overflow:hidden}
+.game{width:min(980px,100vw);height:min(780px,100vh);padding:12px;display:grid;grid-template-rows:auto auto 1fr auto;gap:10px}
+.top,.words,.bottom{background:rgba(255,255,255,.86);border:4px solid white;border-radius:24px;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px}
+.title{font-size:clamp(24px,5vw,42px);font-weight:1000;color:#2c6fc9}
+.stats{text-align:right;font-size:clamp(14px,2.5vw,20px);font-weight:900}
+.words{padding:10px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.word{padding:7px 12px;border-radius:14px;background:#fff;font-size:clamp(15px,2.5vw,21px);font-weight:1000;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,.1);position:relative}
+.word.found{color:#78909c}
+.word.found:after{content:"";position:absolute;left:8px;right:8px;top:50%;height:4px;background:#ff5d73;border-radius:4px;transform:rotate(-3deg)}
+.boardWrap{min-height:0;background:rgba(255,255,255,.58);border:5px solid white;border-radius:34px;padding:12px;box-shadow:0 14px 34px rgba(0,0,0,.14);position:relative}
+.board{width:100%;height:100%;display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(10,1fr);gap:6px;touch-action:none}
+.cell{border:0;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,5vw,38px);font-weight:1000;color:#263238;box-shadow:0 5px 0 rgba(0,0,0,.1),0 8px 14px rgba(0,0,0,.1)}
+.cell.selecting{background:#ffd34f;color:#4b3b00;transform:scale(.96)}
+.cell.found0{background:#91e8ff}.cell.found1{background:#b8f7a3}.cell.found2{background:#ffd083}.cell.found3{background:#ffb3d5}.cell.found4{background:#c7b7ff}.cell.found5{background:#a8ffe8}.cell.found6{background:#ffb0a6}.cell.found7{background:#d7f29a}.cell.found8{background:#b8d7ff}.cell.found9{background:#ffc1ef}
+.overlay{position:absolute;inset:0;border-radius:30px;background:rgba(255,255,255,.92);display:none;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:5}
+.overlay.show{display:flex}
+.result{background:white;border:5px solid #37c871;border-radius:34px;padding:24px;box-shadow:0 16px 40px rgba(0,0,0,.2);max-width:560px;width:100%}
+.resultTitle{font-size:clamp(32px,8vw,64px);font-weight:1000;color:#37c871;margin-bottom:12px}
+.resultText{font-size:clamp(18px,4vw,28px);font-weight:900;margin-bottom:18px}
+.bottom{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px}
+button.control{border:0;border-radius:17px;padding:11px 16px;font-size:16px;font-weight:900;background:#4da3ff;color:white;box-shadow:0 5px 0 #2776c9;cursor:pointer}
+button.green{background:#37c871;box-shadow:0 5px 0 #219f54}button.yellow{background:#ffd34f;color:#4b3b00;box-shadow:0 5px 0 #dfa719}
+button.control:active{transform:translateY(3px);box-shadow:0 2px 0 #2776c9}
+@media(max-width:640px){.game{height:100vh;padding:7px;gap:7px}.top,.words,.bottom{border-width:3px;padding:7px}.boardWrap{border-width:3px;border-radius:24px;padding:7px}.board{gap:4px}.cell{border-radius:10px;font-size:clamp(18px,7vw,28px);box-shadow:0 3px 0 rgba(0,0,0,.1)}.word{padding:5px 8px;font-size:14px}button.control{font-size:14px;padding:9px 12px}}
+</style>
+</head>
+<body>
+<div class="game">
+<div class="top"><div class="title">Word Search</div><div class="stats"><div>Level: <span id="level">1</span></div><div>Found: <span id="foundCount">0</span> / <span id="totalCount">10</span></div></div></div>
+<div class="words" id="words"></div>
+<div class="boardWrap"><div class="board" id="board"></div><div class="overlay" id="overlay"><div class="result"><div class="resultTitle">Great! 🎉</div><div class="resultText" id="resultText">You found all words!</div><button class="control green" id="nextOverlay">New level ▶</button></div></div></div>
+<div class="bottom"><button class="control yellow" id="restart">↻ Restart level</button><button class="control green" id="newLevel">New level ▶</button></div>
+</div>
+<script>
+const SIZE=10, WORDS_PER_LEVEL=10, ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const WORD_POOL=`CAT DOG PIG COW FOX OWL BEE BAT ANT HEN DUCK FISH FROG BEAR LION GOAT WOLF BIRD DEER SEAL
+RED BLUE PINK GRAY GOLD GREEN BLACK WHITE BROWN ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN
+SUN MOON STAR TREE LEAF RAIN SNOW FIRE ROCK WATER CLOUD FLOWER GRASS SAND
+EGG MILK CAKE RICE BREAD CHEESE CORN SOUP JUICE PIE APPLE PLUM PEAR MEAT
+PEN BOOK BAG DESK BELL MAP GLUE RULER PAPER CLOCK
+BED LAMP DOOR CHAIR TABLE BATH KEY SOFA CUP BOX PHONE PLANT
+BALL DOLL KITE CAR TRAIN ROBOT DRUM BOAT PLANE GAME TOY
+EYE EAR NOSE HAND FOOT LEG ARM HEAD HAIR TOOTH MOUTH FACE
+RUN JUMP SWIM READ WRITE SING SLEEP EAT DRINK PLAY LOOK DRAW
+MOM DAD BABY HOME HOUSE ROOM BOY GIRL FAMILY HAT CAP SHOE COAT DRESS SOCK SHIRT
+HOT COLD BIG SMALL FAST SLOW GOOD HAPPY SAD FUN BUS BIKE SHIP TAXI ROAD WHEEL
+YES NO UP DOWN LEFT RIGHT STOP GO`.split(/\s+/).filter(w=>w.length>=2&&w.length<=5);
+let level=1,grid=[],targetWords=[],placedWords=[],foundWords=new Set(),selecting=false,startCell=null,currentSelection=[];
+const boardEl=document.getElementById("board"),wordsEl=document.getElementById("words"),levelEl=document.getElementById("level"),foundCountEl=document.getElementById("foundCount"),totalCountEl=document.getElementById("totalCount"),overlay=document.getElementById("overlay"),resultText=document.getElementById("resultText");
+function rnd(n){return Math.floor(Math.random()*n)}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function emptyGrid(){return Array.from({length:SIZE},()=>Array(SIZE).fill(""))}
+function chooseWords(){return shuffle(WORD_POOL).slice(0,WORDS_PER_LEVEL).sort((a,b)=>b.length-a.length)}
+function canPlace(word,r,c,dr,dc){for(let i=0;i<word.length;i++){let rr=r+dr*i,cc=c+dc*i;if(rr<0||rr>=SIZE||cc<0||cc>=SIZE)return false;if(grid[rr][cc]&&grid[rr][cc]!==word[i])return false}return true}
+function placeWord(word,index){let dirs=[[0,1],[1,0]];for(let t=0;t<300;t++){let [dr,dc]=dirs[rnd(dirs.length)],r=rnd(SIZE),c=rnd(SIZE);if(canPlace(word,r,c,dr,dc)){let cells=[];for(let i=0;i<word.length;i++){let rr=r+dr*i,cc=c+dc*i;grid[rr][cc]=word[i];cells.push([rr,cc])}placedWords.push({word,index,cells});return true}}return false}
+function generateLevel(){overlay.classList.remove("show");foundWords.clear();targetWords=chooseWords();let ok=false;for(let a=0;a<50&&!ok;a++){grid=emptyGrid();placedWords=[];ok=true;for(let i=0;i<targetWords.length;i++){if(!placeWord(targetWords[i],i)){ok=false;break}}}for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(!grid[r][c])grid[r][c]=ABC[rnd(ABC.length)];renderWords();renderBoard();updateStats()}
+function renderWords(){wordsEl.innerHTML="";targetWords.forEach(w=>{let d=document.createElement("div");d.className="word";d.id="word-"+w;d.textContent=w;wordsEl.appendChild(d)})}
+function renderBoard(){boardEl.innerHTML="";for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){let cell=document.createElement("div");cell.className="cell";cell.textContent=grid[r][c];cell.dataset.r=r;cell.dataset.c=c;boardEl.appendChild(cell)}}
+function updateStats(){levelEl.textContent=level;foundCountEl.textContent=foundWords.size;totalCountEl.textContent=targetWords.length}
+function getCellFromEvent(e){let t=e.touches?e.touches[0]:e,el=document.elementFromPoint(t.clientX,t.clientY);if(!el||!el.classList.contains("cell"))return null;return{el,r:+el.dataset.r,c:+el.dataset.c}}
+function clearSelecting(){document.querySelectorAll(".cell.selecting").forEach(el=>el.classList.remove("selecting"));currentSelection=[]}
+function getLineCells(s,e){let dr=e.r-s.r,dc=e.c-s.c;if(dr!==0&&dc!==0)return[];let sr=dr===0?0:(dr>0?1:-1),sc=dc===0?0:(dc>0?1:-1),len=Math.max(Math.abs(dr),Math.abs(dc))+1,cells=[];for(let i=0;i<len;i++){let r=s.r+sr*i,c=s.c+sc*i,el=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);cells.push({r,c,el})}return cells}
+function updateSelection(end){clearSelecting();if(!startCell||!end)return;currentSelection=getLineCells(startCell,end);currentSelection.forEach(x=>x.el.classList.add("selecting"))}
+function selectionWord(){return currentSelection.map(x=>grid[x.r][x.c]).join("")}
+function finishSelection(){let word=selectionWord(),rev=word.split("").reverse().join(""),found=placedWords.find(p=>!foundWords.has(p.word)&&(p.word===word||p.word===rev));if(found){foundWords.add(found.word);document.getElementById("word-"+found.word)?.classList.add("found");found.cells.forEach(([r,c])=>{document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add("found"+(found.index%10))});tone(660,.09,"sine");speak(found.word);updateStats();if(foundWords.size===targetWords.length)setTimeout(()=>{resultText.textContent="You found all "+targetWords.length+" words!";overlay.classList.add("show")},500)}else if(currentSelection.length>1)tone(170,.12,"sawtooth");clearSelecting();selecting=false;startCell=null}
+function pointerDown(e){let cell=getCellFromEvent(e);if(!cell)return;e.preventDefault();selecting=true;startCell=cell;updateSelection(cell)}
+function pointerMove(e){if(!selecting)return;let cell=getCellFromEvent(e);if(!cell)return;e.preventDefault();updateSelection(cell)}
+function pointerUp(e){if(!selecting)return;e.preventDefault();finishSelection()}
+let audioCtx=null;function tone(freq,dur,type){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function speak(text){if(!("speechSynthesis"in window))return;window.speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=.82;u.pitch=1.05;window.speechSynthesis.speak(u)}
+boardEl.addEventListener("mousedown",pointerDown);boardEl.addEventListener("mousemove",pointerMove);window.addEventListener("mouseup",pointerUp);
+boardEl.addEventListener("touchstart",pointerDown,{passive:false});boardEl.addEventListener("touchmove",pointerMove,{passive:false});window.addEventListener("touchend",pointerUp,{passive:false});
+document.getElementById("restart").onclick=generateLevel;document.getElementById("newLevel").onclick=()=>{level++;generateLevel()};document.getElementById("nextOverlay").onclick=()=>{level++;generateLevel()};
+generateLevel();
+</script>
+</body>
+</html>
