@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>English Memory Match 4x4</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:linear-gradient(145deg,#8ed8ff,#fff0a8);display:flex;align-items:center;justify-content:center;color:#263238;overflow:hidden}
+.game{width:min(920px,100vw);height:min(760px,100vh);padding:12px;display:grid;grid-template-rows:auto 1fr auto;gap:10px}
+.top{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;background:rgba(255,255,255,.84);border:4px solid white;border-radius:26px;padding:10px 14px;box-shadow:0 10px 24px rgba(0,0,0,.14)}
+.title{font-size:clamp(20px,4vw,34px);font-weight:1000;white-space:nowrap}
+.level{text-align:center;font-size:clamp(16px,3vw,24px);font-weight:1000;color:#2c6fc9}
+.score{text-align:right;font-size:clamp(14px,2.5vw,20px);font-weight:900}
+.wrap{position:relative;min-height:0;background:rgba(255,255,255,.55);border:5px solid white;border-radius:34px;padding:12px;box-shadow:0 14px 34px rgba(0,0,0,.14)}
+.board{height:100%;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:12px}
+.card{border:0;padding:0;cursor:pointer;border-radius:24px;perspective:1000px;background:transparent;min-width:0;min-height:0}
+.inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .28s ease}
+.card.open .inner,.card.matched .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:24px;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 0 rgba(0,0,0,.12),0 12px 22px rgba(0,0,0,.12);border:5px solid white;overflow:hidden}
+.back{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.45),transparent 22%),linear-gradient(145deg,#8b6cff,#4da3ff);color:white;font-size:clamp(34px,6vw,60px);font-weight:1000}
+.front{transform:rotateY(180deg);background:white;color:#263238;flex-direction:column;gap:4px}
+.front.image{background:linear-gradient(145deg,#fff8d7,#eaf8ff);font-size:clamp(50px,10vw,100px)}
+.front.word{background:linear-gradient(145deg,#fff,#effff2);font-size:clamp(24px,5vw,48px);font-weight:1000;text-transform:uppercase;color:#24884e;letter-spacing:.5px}
+.card.matched .face{border-color:#37c871;box-shadow:0 8px 0 #219f54,0 12px 20px rgba(0,0,0,.12)}
+.card.wrong .face{border-color:#ff5d73;animation:shake .32s ease-in-out}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.overlay{position:absolute;inset:0;border-radius:30px;background:rgba(255,255,255,.92);display:none;align-items:center;justify-content:center;padding:20px;z-index:10;text-align:center}
+.overlay.show{display:flex}
+.result{background:white;border:5px solid #37c871;border-radius:34px;padding:24px;box-shadow:0 16px 40px rgba(0,0,0,.2);max-width:560px;width:100%}
+.resultTitle{font-size:clamp(30px,7vw,58px);font-weight:1000;color:#37c871;line-height:1.05;margin-bottom:12px}
+.resultText{font-size:clamp(18px,4vw,28px);font-weight:900;margin-bottom:18px}
+.bottom{background:rgba(255,255,255,.84);border:4px solid white;border-radius:24px;padding:10px;box-shadow:0 8px 20px rgba(0,0,0,.1);display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;font-weight:900}
+button.control,select{border:0;border-radius:17px;padding:11px 15px;font-size:16px;font-weight:900;background:#4da3ff;color:white;box-shadow:0 5px 0 #2776c9;cursor:pointer}
+button.green{background:#37c871;box-shadow:0 5px 0 #219f54}
+button.yellow{background:#ffd34f;color:#4b3b00;box-shadow:0 5px 0 #dfa719}
+select{background:white;color:#263238;border:3px solid #d7efff;box-shadow:none}
+button.control:active{transform:translateY(3px);box-shadow:0 2px 0 #2776c9}
+@media(max-width:640px){
+.game{height:100vh;padding:7px;gap:7px}.top{grid-template-columns:1fr;text-align:center;gap:3px;padding:7px;border-radius:20px;border-width:3px}.title,.score{text-align:center}.wrap{border-radius:24px;padding:7px;border-width:3px}.board{gap:7px}.face{border-radius:17px;border-width:3px;box-shadow:0 5px 0 rgba(0,0,0,.12),0 8px 14px rgba(0,0,0,.12)}.front.word{font-size:clamp(20px,7vw,34px);letter-spacing:0}.front.image{font-size:clamp(42px,13vw,72px)}.bottom{padding:7px;gap:6px;border-width:3px}button.control,select{font-size:13px;padding:8px 9px}
+}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="top">
+    <div class="title">English Memory</div>
+    <div class="level"><div id="levelName"></div><div id="levelNum"></div></div>
+    <div class="score"><div>Ходы: <span id="moves">0</span></div><div>Найдено: <span id="pairs">0</span> / 8</div></div>
+  </div>
+  <div class="wrap">
+    <div class="board" id="board"></div>
+    <div class="overlay" id="overlay">
+      <div class="result">
+        <div class="resultTitle" id="resultTitle">Great!</div>
+        <div class="resultText" id="resultText"></div>
+        <button class="control green" id="overlayNext">Следующий уровень ▶</button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <button class="control" id="prev">◀ Назад</button>
+    <label>Уровень: <select id="levelSelect"></select></label>
+    <button class="control yellow" id="restart">↻ Заново</button>
+    <button class="control green" id="next">Вперёд ▶</button>
+  </div>
+</div>
+<script>
+const levels=[
+{name:"Animals",ru:"Животные",words:[["cat","🐱"],["dog","🐶"],["pig","🐷"],["cow","🐮"],["fox","🦊"],["owl","🦉"],["bee","🐝"],["fish","🐟"],["duck","🦆"],["lion","🦁"],["frog","🐸"],["bear","🐻"]]},
+{name:"Body",ru:"Части тела",words:[["eye","👁️"],["ear","👂"],["nose","👃"],["hand","✋"],["foot","🦶"],["leg","🦵"],["arm","💪"],["head","🙂"],["hair","💇"],["tooth","🦷"],["mouth","👄"],["face","😀"]]},
+{name:"Food",ru:"Еда",words:[["egg","🥚"],["milk","🥛"],["cake","🍰"],["rice","🍚"],["fish","🐟"],["apple","🍎"],["bread","🍞"],["cheese","🧀"],["corn","🌽"],["soup","🍲"],["juice","🧃"],["pie","🥧"]]},
+{name:"Colors",ru:"Цвета",words:[["red","🔴"],["blue","🔵"],["green","🟢"],["yellow","🟡"],["black","⚫"],["white","⚪"],["pink","🌸"],["gray","🐘"],["gold","⭐"],["brown","🟤"],["orange","🟠"],["purple","🟣"]]},
+{name:"School",ru:"Школа",words:[["pen","🖊️"],["book","📘"],["bag","🎒"],["desk","🪑"],["star","⭐"],["bell","🔔"],["map","🗺️"],["glue","🧴"],["ruler","📏"],["paper","📄"],["pencil","✏️"],["clock","🕘"]]},
+{name:"Numbers",ru:"Числа",words:[["one","1️⃣"],["two","2️⃣"],["three","3️⃣"],["four","4️⃣"],["five","5️⃣"],["six","6️⃣"],["seven","7️⃣"],["eight","8️⃣"],["nine","9️⃣"],["ten","🔟"],["zero","0️⃣"],["plus","➕"]]},
+{name:"Home",ru:"Дом",words:[["bed","🛏️"],["lamp","💡"],["door","🚪"],["chair","🪑"],["table","🍽️"],["bath","🛁"],["key","🔑"],["sofa","🛋️"],["cup","☕"],["box","📦"],["phone","📱"],["plant","🪴"]]},
+{name:"Toys",ru:"Игрушки",words:[["ball","⚽"],["doll","🪆"],["kite","🪁"],["car","🚗"],["train","🚂"],["robot","🤖"],["blocks","🧱"],["bear","🧸"],["game","🎮"],["plane","✈️"],["boat","⛵"],["drum","🥁"]]},
+{name:"Nature",ru:"Природа",words:[["sun","☀️"],["moon","🌙"],["star","⭐"],["tree","🌳"],["leaf","🍃"],["rain","🌧️"],["snow","❄️"],["fire","🔥"],["rock","🪨"],["flower","🌼"],["cloud","☁️"],["water","💧"]]},
+{name:"Actions",ru:"Действия",words:[["run","🏃"],["jump","🦘"],["swim","🏊"],["read","📖"],["write","✍️"],["sing","🎤"],["sleep","😴"],["eat","🍽️"],["drink","🥤"],["play","🎲"],["look","👀"],["draw","🎨"]]}
+];
+const board=document.getElementById("board"),levelName=document.getElementById("levelName"),levelNum=document.getElementById("levelNum"),movesEl=document.getElementById("moves"),pairsEl=document.getElementById("pairs"),overlay=document.getElementById("overlay"),resultTitle=document.getElementById("resultTitle"),resultText=document.getElementById("resultText"),levelSelect=document.getElementById("levelSelect");
+let levelIndex=0,cards=[],opened=[],lock=false,moves=0,matched=0,totalPairs=8;
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function setupSelect(){levelSelect.innerHTML="";levels.forEach((l,i)=>{let o=document.createElement("option");o.value=i;o.textContent=(i+1)+". "+l.ru;levelSelect.appendChild(o)})}
+function deck(){let d=[];levels[levelIndex].words.slice(0,totalPairs).forEach(([word,emoji])=>{d.push({id:word,kind:"image",value:emoji});d.push({id:word,kind:"word",value:word})});return shuffle(d)}
+function render(){
+ overlay.classList.remove("show");board.innerHTML="";cards=deck();opened=[];lock=false;moves=0;matched=0;
+ let l=levels[levelIndex];levelName.textContent=l.ru+" / "+l.name;levelNum.textContent="Level "+(levelIndex+1)+" / "+levels.length;movesEl.textContent=moves;pairsEl.textContent=matched;levelSelect.value=levelIndex;
+ cards.forEach((c,i)=>{let btn=document.createElement("button");btn.className="card";btn.dataset.index=i;
+ let cls=c.kind==="image"?"image":"word";
+ btn.innerHTML='<div class="inner"><div class="face back">?</div><div class="face front '+cls+'">'+c.value+'</div></div>';
+ btn.onclick=()=>clickCard(btn);board.appendChild(btn)});
+}
+function clickCard(btn){
+ if(lock)return;let i=+btn.dataset.index,c=cards[i];if(c.matched||btn.classList.contains("open"))return;
+ btn.classList.add("open");
+ if(c.kind==="word") speakWord(c.value);
+ opened.push({btn,c});
+ if(opened.length===2){moves++;movesEl.textContent=moves;checkPair()}
+}
+function checkPair(){
+ let [a,b]=opened,ok=a.c.id===b.c.id&&a.c.kind!==b.c.kind;
+ if(ok){
+   a.c.matched=b.c.matched=true;a.btn.classList.add("matched");b.btn.classList.add("matched");opened=[];matched++;pairsEl.textContent=matched;tone(660,.09,"sine");
+   if(matched>=totalPairs)setTimeout(showResult,500)
+ } else {
+   lock=true;a.btn.classList.add("wrong");b.btn.classList.add("wrong");tone(170,.13,"sawtooth");
+   setTimeout(()=>{a.btn.classList.remove("open","wrong");b.btn.classList.remove("open","wrong");opened=[];lock=false},2000)
+ }
+}
+function showResult(){
+ let title=moves<=10?"Perfect! 🌟":moves<=16?"Great! 🎉":"Good job! 👍";
+ resultTitle.textContent=title;resultText.textContent='Уровень «'+levels[levelIndex].ru+'» пройден за '+moves+' ходов';overlay.classList.add("show");speakSentence("Great. "+moves+" moves.")
+}
+function nextLevel(){levelIndex=(levelIndex+1)%levels.length;render()}
+function prevLevel(){levelIndex=(levelIndex-1+levels.length)%levels.length;render()}
+let audioCtx=null;function tone(freq,dur,type){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function speakWord(word){speakSentence(word)}
+function speakSentence(text){if(!("speechSynthesis"in window))return;window.speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=.82;u.pitch=1.05;window.speechSynthesis.speak(u)}
+document.getElementById("restart").onclick=render;document.getElementById("next").onclick=nextLevel;document.getElementById("prev").onclick=prevLevel;document.getElementById("overlayNext").onclick=nextLevel;
+levelSelect.onchange=()=>{levelIndex=+levelSelect.value;render()};
+setupSelect();render();
+</script>
+</body>
+</html>
