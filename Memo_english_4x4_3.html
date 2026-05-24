@@ -89,12 +89,7 @@ button.control:disabled{opacity:.55;cursor:not-allowed}
 
 <!--
 Online leaderboard for GitHub Pages:
-1) Create a Firebase project.
-2) Add a Realtime Database.
-3) Replace the values below with your Firebase web app config.
-4) For a public kid-friendly prototype, start with simple test rules, then lock them down before production.
-
-Without Firebase config, the game still works, but leaderboard is local to the browser only.
+Uses Cloud Firestore. Collection "leaderboard" is created automatically after first saved score.
 -->
 <script>
 window.LEADERBOARD_CONFIG = {
@@ -107,7 +102,7 @@ window.LEADERBOARD_CONFIG = {
 };
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 <script>
 const levels=[{"name":"Animals","ru":"Животные","words":[["cat","🐱"],["dog","🐶"],["pig","🐷"],["cow","🐮"],["fox","🦊"],["owl","🦉"],["bee","🐝"],["fish","🐟"],["duck","🦆"],["lion","🦁"],["frog","🐸"],["bear","🐻"]]},{"name":"Body","ru":"Части тела","words":[["eye","👁️"],["ear","👂"],["nose","👃"],["hand","✋"],["foot","🦶"],["leg","🦵"],["arm","💪"],["head","🙂"],["hair","💇"],["tooth","🦷"],["mouth","👄"],["face","😀"]]},{"name":"Food","ru":"Еда","words":[["egg","🥚"],["milk","🥛"],["cake","🍰"],["rice","🍚"],["fish","🐟"],["apple","🍎"],["bread","🍞"],["cheese","🧀"],["corn","🌽"],["soup","🍲"],["juice","🧃"],["pie","🥧"]]},{"name":"Colors","ru":"Цвета","words":[["red","🔴"],["blue","🔵"],["green","🟢"],["yellow","🟡"],["black","⚫"],["white","⚪"],["pink","🌸"],["gray","🐘"],["gold","⭐"],["brown","🟤"],["orange","🟠"],["purple","🟣"]]},{"name":"School","ru":"Школа","words":[["pen","🖊️"],["book","📘"],["bag","🎒"],["desk","🪑"],["star","⭐"],["bell","🔔"],["map","🗺️"],["glue","🧴"],["ruler","📏"],["paper","📄"],["pencil","✏️"],["clock","🕘"]]},{"name":"Numbers","ru":"Числа","words":[["one","1️⃣"],["two","2️⃣"],["three","3️⃣"],["four","4️⃣"],["five","5️⃣"],["six","6️⃣"],["seven","7️⃣"],["eight","8️⃣"],["nine","9️⃣"],["ten","🔟"],["zero","0️⃣"],["plus","➕"]]},{"name":"Home","ru":"Дом","words":[["bed","🛏️"],["lamp","💡"],["door","🚪"],["chair","🪑"],["table","🍽️"],["bath","🛁"],["key","🔑"],["sofa","🛋️"],["cup","☕"],["box","📦"],["phone","📱"],["plant","🪴"]]},{"name":"Toys","ru":"Игрушки","words":[["ball","⚽"],["doll","🪆"],["kite","🪁"],["car","🚗"],["train","🚂"],["robot","🤖"],["blocks","🧱"],["bear","🧸"],["game","🎮"],["plane","✈️"],["boat","⛵"],["drum","🥁"]]},{"name":"Nature","ru":"Природа","words":[["sun","☀️"],["moon","🌙"],["star","⭐"],["tree","🌳"],["leaf","🍃"],["rain","🌧️"],["snow","❄️"],["fire","🔥"],["rock","🪨"],["flower","🌼"],["cloud","☁️"],["water","💧"]]},{"name":"Actions","ru":"Действия","words":[["run","🏃"],["jump","🦘"],["swim","🏊"],["read","📖"],["write","✍️"],["sing","🎤"],["sleep","😴"],["eat","🍽️"],["drink","🥤"],["play","🎲"],["look","👀"],["draw","🎨"]]},{"name":"Fruit","ru":"Фрукты","words":[["apple","🍎"],["pear","🍐"],["banana","🍌"],["grape","🍇"],["melon","🍈"],["lemon","🍋"],["peach","🍑"],["cherry","🍒"],["berry","🫐"],["kiwi","🥝"],["plum","🟣"],["mango","🥭"]]},{"name":"Vegetables","ru":"Овощи","words":[["corn","🌽"],["carrot","🥕"],["potato","🥔"],["tomato","🍅"],["pepper","🫑"],["onion","🧅"],["pea","🟢"],["bean","🫘"],["cabbage","🥬"],["salad","🥗"],["garlic","🧄"],["pumpkin","🎃"]]},{"name":"Clothes","ru":"Одежда","words":[["hat","👒"],["cap","🧢"],["shirt","👕"],["dress","👗"],["sock","🧦"],["shoe","👟"],["coat","🧥"],["pants","👖"],["scarf","🧣"],["glove","🧤"],["boot","🥾"],["bag","👜"]]},{"name":"Weather","ru":"Погода","words":[["sunny","☀️"],["rain","🌧️"],["snow","❄️"],["wind","💨"],["cloud","☁️"],["storm","⛈️"],["hot","🥵"],["cold","🥶"],["warm","😊"],["cool","🧊"],["fog","🌫️"],["rainbow","🌈"]]},{"name":"Family","ru":"Семья","words":[["mom","👩"],["dad","👨"],["baby","👶"],["boy","👦"],["girl","👧"],["man","👨"],["woman","👩"],["grandma","👵"],["grandpa","👴"],["sister","👧"],["brother","👦"],["family","👨‍👩‍👧"]]},{"name":"Feelings","ru":"Чувства","words":[["happy","😀"],["sad","😢"],["angry","😠"],["scared","😱"],["sleepy","😴"],["sick","🤒"],["funny","😜"],["proud","😎"],["shy","😊"],["tired","🥱"],["calm","🙂"],["love","❤️"]]},{"name":"Transport","ru":"Транспорт","words":[["car","🚗"],["bus","🚌"],["train","🚂"],["plane","✈️"],["boat","⛵"],["bike","🚲"],["truck","🚚"],["taxi","🚕"],["ship","🚢"],["rocket","🚀"],["tram","🚋"],["scooter","🛴"]]},{"name":"Places","ru":"Места","words":[["home","🏠"],["school","🏫"],["park","🏞️"],["shop","🏬"],["zoo","🦁"],["farm","🚜"],["beach","🏖️"],["street","🛣️"],["bank","🏦"],["hospital","🏥"],["library","📚"],["pool","🏊"]]},{"name":"Kitchen","ru":"Кухня","words":[["cup","☕"],["fork","🍴"],["spoon","🥄"],["plate","🍽️"],["pan","🍳"],["pot","🍲"],["knife","🔪"],["bowl","🥣"],["glass","🥛"],["sink","🚰"],["oven","🔥"],["fridge","🧊"]]},{"name":"Bathroom","ru":"Ванная","words":[["soap","🧼"],["towel","🧺"],["bath","🛁"],["shower","🚿"],["brush","🪥"],["tooth","🦷"],["water","💧"],["mirror","🪞"],["comb","💇"],["sink","🚰"],["clean","✨"],["wash","🧽"]]},{"name":"Sea Animals","ru":"Морские животные","words":[["fish","🐟"],["whale","🐋"],["dolphin","🐬"],["crab","🦀"],["shrimp","🦐"],["octopus","🐙"],["seal","🦭"],["shark","🦈"],["shell","🐚"],["squid","🦑"],["turtle","🐢"],["starfish","⭐"]]},{"name":"Birds","ru":"Птицы","words":[["bird","🐦"],["duck","🦆"],["hen","🐔"],["chick","🐥"],["owl","🦉"],["eagle","🦅"],["penguin","🐧"],["swan","🦢"],["turkey","🦃"],["parrot","🦜"],["dove","🕊️"],["flamingo","🦩"]]},{"name":"Bugs","ru":"Насекомые","words":[["bee","🐝"],["ant","🐜"],["bug","🐞"],["fly","🪰"],["worm","🪱"],["snail","🐌"],["spider","🕷️"],["butterfly","🦋"],["mosquito","🦟"],["cricket","🦗"],["beetle","🪲"],["web","🕸️"]]},{"name":"Shapes","ru":"Фигуры","words":[["circle","⭕"],["square","⬛"],["star","⭐"],["heart","❤️"],["triangle","🔺"],["diamond","🔷"],["line","➖"],["cross","❌"],["arrow","➡️"],["oval","🥚"],["cube","🧊"],["ring","💍"]]},{"name":"Opposites","ru":"Противоположности","words":[["big","🐘"],["small","🐭"],["hot","🔥"],["cold","🧊"],["up","⬆️"],["down","⬇️"],["fast","🏎️"],["slow","🐢"],["day","☀️"],["night","🌙"],["yes","✅"],["no","❌"]]},{"name":"Verbs 2","ru":"Глаголы 2","words":[["sit","🪑"],["stand","🧍"],["walk","🚶"],["clap","👏"],["wave","👋"],["cook","🍳"],["wash","🧼"],["open","📖"],["close","🚪"],["push","👉"],["pull","🪢"],["kick","⚽"]]},{"name":"Classroom","ru":"Класс","words":[["teacher","👩‍🏫"],["student","🧑‍🎓"],["board","⬛"],["chalk","✏️"],["lesson","📖"],["test","📝"],["word","🔤"],["letter","🔠"],["number","🔢"],["paint","🎨"],["music","🎵"],["lunch","🥪"]]},{"name":"Sports","ru":"Спорт","words":[["ball","⚽"],["run","🏃"],["swim","🏊"],["jump","🦘"],["tennis","🎾"],["golf","⛳"],["ski","🎿"],["medal","🏅"],["goal","🥅"],["bike","🚲"],["skate","🛼"],["yoga","🧘"]]},{"name":"Music","ru":"Музыка","words":[["song","🎵"],["sing","🎤"],["drum","🥁"],["bell","🔔"],["guitar","🎸"],["piano","🎹"],["violin","🎻"],["horn","📯"],["note","🎶"],["dance","💃"],["radio","📻"],["music","🎼"]]},{"name":"Pets 2","ru":"Питомцы 2","words":[["puppy","🐶"],["kitten","🐱"],["hamster","🐹"],["rabbit","🐰"],["fish","🐟"],["bird","🐦"],["turtle","🐢"],["mouse","🐭"],["pony","🐴"],["snake","🐍"],["frog","🐸"],["lizard","🦎"]]},{"name":"Farm","ru":"Ферма","words":[["cow","🐮"],["pig","🐷"],["hen","🐔"],["goat","🐐"],["sheep","🐑"],["horse","🐴"],["duck","🦆"],["egg","🥚"],["milk","🥛"],["barn","🏠"],["hay","🌾"],["tractor","🚜"]]},{"name":"Zoo","ru":"Зоопарк","words":[["lion","🦁"],["tiger","🐯"],["bear","🐻"],["panda","🐼"],["zebra","🦓"],["monkey","🐵"],["giraffe","🦒"],["hippo","🦛"],["rhino","🦏"],["camel","🐫"],["koala","🐨"],["kangaroo","🦘"]]},{"name":"Space","ru":"Космос","words":[["sun","☀️"],["moon","🌙"],["star","⭐"],["earth","🌍"],["rocket","🚀"],["alien","👽"],["planet","🪐"],["sky","🌌"],["comet","☄️"],["ship","🛸"],["space","🌠"],["night","🌃"]]},{"name":"Time","ru":"Время","words":[["day","☀️"],["night","🌙"],["morning","🌅"],["noon","🕛"],["evening","🌆"],["clock","🕘"],["hour","⏰"],["today","📅"],["week","🗓️"],["month","📆"],["year","🎆"],["soon","⏳"]]},{"name":"Good Habits","ru":"Хорошие привычки","words":[["share","🤝"],["help","🙋"],["clean","✨"],["brush","🪥"],["listen","👂"],["read","📖"],["smile","😊"],["sleep","😴"],["eat","🍽️"],["wash","🧼"],["thank","🙏"],["care","❤️"]]},{"name":"Party","ru":"Праздник","words":[["cake","🎂"],["gift","🎁"],["balloon","🎈"],["music","🎵"],["dance","💃"],["hat","🥳"],["candle","🕯️"],["star","⭐"],["smile","😀"],["clap","👏"],["game","🎲"],["card","💌"]]},{"name":"Jobs","ru":"Профессии","words":[["doctor","👩‍⚕️"],["teacher","👩‍🏫"],["cook","👨‍🍳"],["pilot","👩‍✈️"],["farmer","🧑‍🌾"],["artist","👩‍🎨"],["singer","🎤"],["police","👮"],["worker","👷"],["driver","🚗"],["nurse","🧑‍⚕️"],["fireman","👨‍🚒"]]},{"name":"Safety","ru":"Безопасность","words":[["stop","🛑"],["go","🟢"],["look","👀"],["listen","👂"],["help","🆘"],["safe","✅"],["cross","🚸"],["helmet","⛑️"],["light","🚦"],["slow","🐢"],["care","❤️"],["home","🏠"]]},{"name":"Feelings 2","ru":"Чувства 2","words":[["kind","😊"],["brave","🦁"],["glad","😄"],["mad","😡"],["quiet","🤫"],["loud","📣"],["nice","👍"],["sorry","🙏"],["busy","🧰"],["ready","✅"],["alone","🧍"],["together","👫"]]},{"name":"Easy Words","ru":"Простые слова","words":[["me","🙂"],["you","👉"],["we","👫"],["it","🎲"],["my","❤️"],["to","➡️"],["in","📥"],["on","🔛"],["is","✅"],["am","🙋"],["can","💪"],["see","👀"]]},{"name":"Reading","ru":"Чтение","words":[["a","🔤"],["the","📖"],["and","➕"],["book","📘"],["page","📄"],["word","🔠"],["letter","🔡"],["story","📚"],["read","📖"],["line","➖"],["name","🏷️"],["sound","🔊"]]}];
@@ -117,19 +112,20 @@ const LOCAL_KEY="englishMemoryLeaderboardTop20";
 
 function hasFirebaseConfig() {
   const c=window.LEADERBOARD_CONFIG||{};
-  return c.apiKey && !String(c.apiKey).startsWith("PASTE_") && c.databaseURL && !String(c.databaseURL).includes("PASTE_");
+  return c.apiKey && !String(c.apiKey).startsWith("PASTE_") && c.projectId && c.appId;
 }
 function initLeaderboard() {
   try {
-    if (hasFirebaseConfig() && window.firebase) {
-      firebase.initializeApp(window.LEADERBOARD_CONFIG);
-      db=firebase.database();
+    if (hasFirebaseConfig() && window.firebase && firebase.firestore) {
+      if (!firebase.apps.length) firebase.initializeApp(window.LEADERBOARD_CONFIG);
+      db=firebase.firestore();
       onlineLeaderboard=true;
       leaderboardStatus.textContent="Online leaderboard is active.";
     } else {
       leaderboardStatus.textContent="Local leaderboard only. Add Firebase config for shared online scores.";
     }
   } catch(e) {
+    console.error("Firebase init error:", e);
     onlineLeaderboard=false;
     db=null;
     leaderboardStatus.textContent="Leaderboard is local because Firebase did not start.";
@@ -183,9 +179,8 @@ function sortScores(list) {
 }
 async function getScores() {
   if (onlineLeaderboard && db) {
-    const snap=await db.ref("leaderboard").once("value");
-    const val=snap.val()||{};
-    return Object.values(val);
+    const snap=await db.collection("leaderboard").get();
+    return snap.docs.map(doc=>({docId:doc.id,...doc.data()}));
   }
   return JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");
 }
@@ -197,17 +192,15 @@ async function saveScore() {
   const entry={...currentResult, player:cleanName(playerNameEl.value)};
   scoreSaved=true;saveScoreBtn.disabled=true;
   if (onlineLeaderboard && db) {
-    const ref=db.ref("leaderboard").push();
-    await ref.set(entry);
-    const scores=sortScores(await getScores());
-    const updates={};
-    const snap=await db.ref("leaderboard").once("value");
-    snap.forEach(child=>{
-      const val=child.val();
-      const keep=scores.some(s=>s.createdAt===val.createdAt && s.player===val.player && Number(s.moves)===Number(val.moves));
-      if(!keep) updates[child.key]=null;
+    await db.collection("leaderboard").add(entry);
+    const allScores=await getScores();
+    const topScores=sortScores(allScores);
+    const keepIds=new Set(topScores.map(s=>s.docId));
+    const batch=db.batch();
+    allScores.forEach(s=>{
+      if(s.docId && !keepIds.has(s.docId)) batch.delete(db.collection("leaderboard").doc(s.docId));
     });
-    await db.ref("leaderboard").update(updates);
+    await batch.commit();
   } else {
     const scores=await getScores();
     scores.push(entry);
