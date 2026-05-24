@@ -1,0 +1,3940 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Letter Bounce English</title>
+  <style>
+    :root {
+      --bg1: #8fd3ff;
+      --bg2: #f8f3a3;
+      --card: #ffffff;
+      --text: #263238;
+      --good: #49c26b;
+      --bad: #ff5b6e;
+      --blue: #4da3ff;
+      --purple: #8b6cff;
+      --orange: #ffb84d;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(160deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .game {
+      width: min(980px, 100vw);
+      height: min(720px, 100vh);
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(255,255,255,0.78);
+      border: 3px solid rgba(255,255,255,0.75);
+      border-radius: 24px;
+      padding: 10px 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+    }
+
+    .title {
+      font-weight: 900;
+      font-size: clamp(20px, 4vw, 34px);
+      letter-spacing: 0.5px;
+    }
+
+    .meta {
+      font-weight: 800;
+      font-size: clamp(14px, 2.2vw, 18px);
+      text-align: right;
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .question {
+      background: rgba(255,255,255,0.85);
+      border: 4px solid white;
+      border-radius: 30px;
+      padding: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.13);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .navButton, .soundButton, .restartButton {
+      border: 0;
+      border-radius: 18px;
+      padding: 11px 16px;
+      background: var(--blue);
+      color: white;
+      font-weight: 900;
+      font-size: 17px;
+      box-shadow: 0 5px 0 #2776c9;
+      cursor: pointer;
+    }
+
+    .navButton:active, .soundButton:active, .restartButton:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #2776c9;
+    }
+
+    .pictureBox {
+      text-align: center;
+    }
+
+    .emoji {
+      font-size: clamp(70px, 13vw, 118px);
+      line-height: 1;
+      filter: drop-shadow(0 8px 0 rgba(0,0,0,0.08));
+      animation: floaty 2.6s ease-in-out infinite;
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-7px) rotate(2deg); }
+    }
+
+    .hint {
+      font-size: 18px;
+      font-weight: 800;
+      color: #607d8b;
+      margin-top: 4px;
+    }
+
+    .answer {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+      min-height: 54px;
+    }
+
+    .slot {
+      width: clamp(42px, 8vw, 58px);
+      height: clamp(42px, 8vw, 58px);
+      border-radius: 17px;
+      background: #edf6ff;
+      border: 3px dashed #86bdf4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(24px, 6vw, 34px);
+      font-weight: 1000;
+      color: #2c80d3;
+      text-transform: uppercase;
+    }
+
+    .slot.filled {
+      background: #d9ffd7;
+      border-style: solid;
+      border-color: var(--good);
+      color: #27994a;
+      animation: pop 0.22s ease-out;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.5); }
+      70% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .playAreaWrap {
+      position: relative;
+      min-height: 0;
+      background: rgba(255,255,255,0.42);
+      border-radius: 32px;
+      padding: 10px;
+      box-shadow: inset 0 0 0 4px rgba(255,255,255,0.65);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background:
+        radial-gradient(circle at 16% 20%, rgba(255,255,255,0.55) 0 8%, transparent 9%),
+        radial-gradient(circle at 84% 72%, rgba(255,255,255,0.35) 0 7%, transparent 8%),
+        linear-gradient(145deg, #fef8ff, #e9f7ff);
+      border-radius: 26px;
+      border: 5px solid white;
+      box-shadow: inset 0 0 0 3px rgba(77,163,255,0.12), 0 10px 25px rgba(0,0,0,0.12);
+      cursor: pointer;
+    }
+
+    .message {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: white;
+      border: 5px solid var(--good);
+      border-radius: 28px;
+      padding: 18px 28px;
+      font-size: clamp(28px, 7vw, 56px);
+      font-weight: 1000;
+      color: var(--good);
+      box-shadow: 0 14px 35px rgba(0,0,0,0.2);
+      pointer-events: none;
+      opacity: 0;
+      transition: 0.25s;
+      text-align: center;
+      z-index: 4;
+    }
+
+    .message.show {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .bottom {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.75);
+      border-radius: 24px;
+      padding: 10px;
+      font-weight: 800;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.09);
+    }
+
+    select {
+      border: 3px solid #fff;
+      border-radius: 16px;
+      padding: 9px 12px;
+      font-size: 16px;
+      font-weight: 800;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    @media (max-width: 640px) {
+      .game {
+        height: 100vh;
+        padding: 8px;
+        gap: 8px;
+      }
+
+      .question {
+        grid-template-columns: auto 1fr auto;
+        border-radius: 22px;
+        padding: 8px;
+      }
+
+      .navButton, .soundButton, .restartButton {
+        padding: 9px 11px;
+        font-size: 14px;
+      }
+
+      .emoji {
+        font-size: 72px;
+      }
+
+      .hint {
+        font-size: 14px;
+      }
+
+      .answer {
+        gap: 5px;
+        margin-top: 6px;
+      }
+
+      .slot {
+        width: 40px;
+        height: 40px;
+        border-radius: 13px;
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game">
+    <div class="topbar">
+      <div class="title">Letter Bounce English</div>
+      <div class="meta">
+        <div id="categoryName">Pets</div>
+        <div id="progressText">1 / 1</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="question">
+        <button class="navButton" id="prevBtn">◀</button>
+
+        <div class="pictureBox">
+          <div class="emoji" id="emoji">🐱</div>
+          <div class="hint">Click letters in order</div>
+          <div class="answer" id="answer"></div>
+        </div>
+
+        <button class="navButton" id="nextBtn">▶</button>
+      </div>
+
+      <div class="playAreaWrap">
+        <canvas id="canvas"></canvas>
+        <div class="message" id="message">Good!</div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <label>
+        Level:
+        <select id="levelSelect"></select>
+      </label>
+      <button class="soundButton" id="speakBtn">🔊 Say word</button>
+      <button class="restartButton" id="restartBtn">↻ Restart word</button>
+    </div>
+  </div>
+
+  <script>
+    const levels = [
+      {
+            "name": "Pets",
+            "words": [
+                  {
+                        "word": "cat",
+                        "emoji": "🐱"
+                  },
+                  {
+                        "word": "dog",
+                        "emoji": "🐶"
+                  },
+                  {
+                        "word": "pig",
+                        "emoji": "🐷"
+                  },
+                  {
+                        "word": "hen",
+                        "emoji": "🐔"
+                  },
+                  {
+                        "word": "cow",
+                        "emoji": "🐮"
+                  },
+                  {
+                        "word": "goat",
+                        "emoji": "🐐"
+                  },
+                  {
+                        "word": "duck",
+                        "emoji": "🦆"
+                  },
+                  {
+                        "word": "fish",
+                        "emoji": "🐟"
+                  },
+                  {
+                        "word": "bird",
+                        "emoji": "🐦"
+                  },
+                  {
+                        "word": "frog",
+                        "emoji": "🐸"
+                  },
+                  {
+                        "word": "pony",
+                        "emoji": "🐴"
+                  },
+                  {
+                        "word": "bunny",
+                        "emoji": "🐰"
+                  },
+                  {
+                        "word": "mouse",
+                        "emoji": "🐭"
+                  },
+                  {
+                        "word": "hamster",
+                        "emoji": "🐹"
+                  },
+                  {
+                        "word": "turtle",
+                        "emoji": "🐢"
+                  },
+                  {
+                        "word": "puppy",
+                        "emoji": "🐶"
+                  },
+                  {
+                        "word": "kitten",
+                        "emoji": "🐱"
+                  },
+                  {
+                        "word": "sheep",
+                        "emoji": "🐑"
+                  },
+                  {
+                        "word": "horse",
+                        "emoji": "🐴"
+                  },
+                  {
+                        "word": "chick",
+                        "emoji": "🐥"
+                  },
+                  {
+                        "word": "goose",
+                        "emoji": "🪿"
+                  },
+                  {
+                        "word": "parrot",
+                        "emoji": "🦜"
+                  },
+                  {
+                        "word": "rabbit",
+                        "emoji": "🐰"
+                  },
+                  {
+                        "word": "lizard",
+                        "emoji": "🦎"
+                  },
+                  {
+                        "word": "snail",
+                        "emoji": "🐌"
+                  },
+                  {
+                        "word": "bee",
+                        "emoji": "🐝"
+                  },
+                  {
+                        "word": "ant",
+                        "emoji": "🐜"
+                  },
+                  {
+                        "word": "crab",
+                        "emoji": "🦀"
+                  },
+                  {
+                        "word": "clam",
+                        "emoji": "🦪"
+                  },
+                  {
+                        "word": "donkey",
+                        "emoji": "🫏"
+                  }
+            ]
+      },
+      {
+            "name": "Wild animals",
+            "words": [
+                  {
+                        "word": "fox",
+                        "emoji": "🦊"
+                  },
+                  {
+                        "word": "bat",
+                        "emoji": "🦇"
+                  },
+                  {
+                        "word": "owl",
+                        "emoji": "🦉"
+                  },
+                  {
+                        "word": "bee",
+                        "emoji": "🐝"
+                  },
+                  {
+                        "word": "ant",
+                        "emoji": "🐜"
+                  },
+                  {
+                        "word": "lion",
+                        "emoji": "🦁"
+                  },
+                  {
+                        "word": "tiger",
+                        "emoji": "🐯"
+                  },
+                  {
+                        "word": "bear",
+                        "emoji": "🐻"
+                  },
+                  {
+                        "word": "wolf",
+                        "emoji": "🐺"
+                  },
+                  {
+                        "word": "deer",
+                        "emoji": "🦌"
+                  },
+                  {
+                        "word": "zebra",
+                        "emoji": "🦓"
+                  },
+                  {
+                        "word": "monkey",
+                        "emoji": "🐵"
+                  },
+                  {
+                        "word": "panda",
+                        "emoji": "🐼"
+                  },
+                  {
+                        "word": "koala",
+                        "emoji": "🐨"
+                  },
+                  {
+                        "word": "snake",
+                        "emoji": "🐍"
+                  },
+                  {
+                        "word": "whale",
+                        "emoji": "🐳"
+                  },
+                  {
+                        "word": "shark",
+                        "emoji": "🦈"
+                  },
+                  {
+                        "word": "eagle",
+                        "emoji": "🦅"
+                  },
+                  {
+                        "word": "moose",
+                        "emoji": "🫎"
+                  },
+                  {
+                        "word": "camel",
+                        "emoji": "🐫"
+                  },
+                  {
+                        "word": "rhino",
+                        "emoji": "🦏"
+                  },
+                  {
+                        "word": "hippo",
+                        "emoji": "🦛"
+                  },
+                  {
+                        "word": "otter",
+                        "emoji": "🦦"
+                  },
+                  {
+                        "word": "sloth",
+                        "emoji": "🦥"
+                  },
+                  {
+                        "word": "skunk",
+                        "emoji": "🦨"
+                  },
+                  {
+                        "word": "beaver",
+                        "emoji": "🦫"
+                  },
+                  {
+                        "word": "bison",
+                        "emoji": "🦬"
+                  },
+                  {
+                        "word": "llama",
+                        "emoji": "🦙"
+                  },
+                  {
+                        "word": "seal",
+                        "emoji": "🦭"
+                  },
+                  {
+                        "word": "gorilla",
+                        "emoji": "🦍"
+                  }
+            ]
+      },
+      {
+            "name": "Colors",
+            "words": [
+                  {
+                        "word": "red",
+                        "emoji": "🔴"
+                  },
+                  {
+                        "word": "blue",
+                        "emoji": "🔵"
+                  },
+                  {
+                        "word": "pink",
+                        "emoji": "🌸"
+                  },
+                  {
+                        "word": "gold",
+                        "emoji": "⭐"
+                  },
+                  {
+                        "word": "gray",
+                        "emoji": "🐘"
+                  },
+                  {
+                        "word": "green",
+                        "emoji": "🟢"
+                  },
+                  {
+                        "word": "black",
+                        "emoji": "⚫"
+                  },
+                  {
+                        "word": "white",
+                        "emoji": "⚪"
+                  },
+                  {
+                        "word": "brown",
+                        "emoji": "🟤"
+                  },
+                  {
+                        "word": "purple",
+                        "emoji": "🟣"
+                  },
+                  {
+                        "word": "orange",
+                        "emoji": "🟠"
+                  },
+                  {
+                        "word": "yellow",
+                        "emoji": "🟡"
+                  },
+                  {
+                        "word": "silver",
+                        "emoji": "🥈"
+                  },
+                  {
+                        "word": "violet",
+                        "emoji": "🟣"
+                  },
+                  {
+                        "word": "indigo",
+                        "emoji": "🔵"
+                  },
+                  {
+                        "word": "navy",
+                        "emoji": "🔵"
+                  },
+                  {
+                        "word": "teal",
+                        "emoji": "🟢"
+                  },
+                  {
+                        "word": "mint",
+                        "emoji": "🌿"
+                  },
+                  {
+                        "word": "lime",
+                        "emoji": "🍋"
+                  },
+                  {
+                        "word": "tan",
+                        "emoji": "🟫"
+                  },
+                  {
+                        "word": "beige",
+                        "emoji": "🟫"
+                  },
+                  {
+                        "word": "coral",
+                        "emoji": "🪸"
+                  },
+                  {
+                        "word": "peach",
+                        "emoji": "🍑"
+                  },
+                  {
+                        "word": "cream",
+                        "emoji": "🍦"
+                  },
+                  {
+                        "word": "aqua",
+                        "emoji": "💧"
+                  },
+                  {
+                        "word": "ruby",
+                        "emoji": "♦️"
+                  },
+                  {
+                        "word": "olive",
+                        "emoji": "🫒"
+                  },
+                  {
+                        "word": "rose",
+                        "emoji": "🌹"
+                  },
+                  {
+                        "word": "sky",
+                        "emoji": "☁️"
+                  },
+                  {
+                        "word": "dark",
+                        "emoji": "🌑"
+                  }
+            ]
+      },
+      {
+            "name": "Numbers",
+            "words": [
+                  {
+                        "word": "one",
+                        "emoji": "1️⃣"
+                  },
+                  {
+                        "word": "two",
+                        "emoji": "2️⃣"
+                  },
+                  {
+                        "word": "six",
+                        "emoji": "6️⃣"
+                  },
+                  {
+                        "word": "ten",
+                        "emoji": "🔟"
+                  },
+                  {
+                        "word": "four",
+                        "emoji": "4️⃣"
+                  },
+                  {
+                        "word": "three",
+                        "emoji": "3️⃣"
+                  },
+                  {
+                        "word": "five",
+                        "emoji": "5️⃣"
+                  },
+                  {
+                        "word": "seven",
+                        "emoji": "7️⃣"
+                  },
+                  {
+                        "word": "eight",
+                        "emoji": "8️⃣"
+                  },
+                  {
+                        "word": "nine",
+                        "emoji": "9️⃣"
+                  },
+                  {
+                        "word": "zero",
+                        "emoji": "0️⃣"
+                  },
+                  {
+                        "word": "eleven",
+                        "emoji": "1️⃣1️⃣"
+                  },
+                  {
+                        "word": "twelve",
+                        "emoji": "1️⃣2️⃣"
+                  },
+                  {
+                        "word": "first",
+                        "emoji": "🥇"
+                  },
+                  {
+                        "word": "second",
+                        "emoji": "🥈"
+                  },
+                  {
+                        "word": "third",
+                        "emoji": "🥉"
+                  },
+                  {
+                        "word": "half",
+                        "emoji": "½"
+                  },
+                  {
+                        "word": "pair",
+                        "emoji": "👟"
+                  },
+                  {
+                        "word": "dozen",
+                        "emoji": "🥚"
+                  },
+                  {
+                        "word": "count",
+                        "emoji": "🔢"
+                  },
+                  {
+                        "word": "add",
+                        "emoji": "➕"
+                  },
+                  {
+                        "word": "sum",
+                        "emoji": "🟰"
+                  },
+                  {
+                        "word": "more",
+                        "emoji": "⬆️"
+                  },
+                  {
+                        "word": "less",
+                        "emoji": "⬇️"
+                  },
+                  {
+                        "word": "many",
+                        "emoji": "🔢"
+                  },
+                  {
+                        "word": "few",
+                        "emoji": "🤏"
+                  },
+                  {
+                        "word": "once",
+                        "emoji": "1️⃣"
+                  },
+                  {
+                        "word": "twice",
+                        "emoji": "2️⃣"
+                  },
+                  {
+                        "word": "odd",
+                        "emoji": "1️⃣"
+                  },
+                  {
+                        "word": "even",
+                        "emoji": "2️⃣"
+                  }
+            ]
+      },
+      {
+            "name": "Food",
+            "words": [
+                  {
+                        "word": "egg",
+                        "emoji": "🥚"
+                  },
+                  {
+                        "word": "jam",
+                        "emoji": "🍓"
+                  },
+                  {
+                        "word": "pie",
+                        "emoji": "🥧"
+                  },
+                  {
+                        "word": "milk",
+                        "emoji": "🥛"
+                  },
+                  {
+                        "word": "cake",
+                        "emoji": "🍰"
+                  },
+                  {
+                        "word": "bread",
+                        "emoji": "🍞"
+                  },
+                  {
+                        "word": "rice",
+                        "emoji": "🍚"
+                  },
+                  {
+                        "word": "soup",
+                        "emoji": "🍲"
+                  },
+                  {
+                        "word": "corn",
+                        "emoji": "🌽"
+                  },
+                  {
+                        "word": "apple",
+                        "emoji": "🍎"
+                  },
+                  {
+                        "word": "pear",
+                        "emoji": "🍐"
+                  },
+                  {
+                        "word": "plum",
+                        "emoji": "🫐"
+                  },
+                  {
+                        "word": "grape",
+                        "emoji": "🍇"
+                  },
+                  {
+                        "word": "melon",
+                        "emoji": "🍈"
+                  },
+                  {
+                        "word": "lemon",
+                        "emoji": "🍋"
+                  },
+                  {
+                        "word": "peach",
+                        "emoji": "🍑"
+                  },
+                  {
+                        "word": "berry",
+                        "emoji": "🫐"
+                  },
+                  {
+                        "word": "pizza",
+                        "emoji": "🍕"
+                  },
+                  {
+                        "word": "pasta",
+                        "emoji": "🍝"
+                  },
+                  {
+                        "word": "cheese",
+                        "emoji": "🧀"
+                  },
+                  {
+                        "word": "honey",
+                        "emoji": "🍯"
+                  },
+                  {
+                        "word": "cookie",
+                        "emoji": "🍪"
+                  },
+                  {
+                        "word": "candy",
+                        "emoji": "🍬"
+                  },
+                  {
+                        "word": "salad",
+                        "emoji": "🥗"
+                  },
+                  {
+                        "word": "carrot",
+                        "emoji": "🥕"
+                  },
+                  {
+                        "word": "potato",
+                        "emoji": "🥔"
+                  },
+                  {
+                        "word": "tomato",
+                        "emoji": "🍅"
+                  },
+                  {
+                        "word": "banana",
+                        "emoji": "🍌"
+                  },
+                  {
+                        "word": "orange",
+                        "emoji": "🍊"
+                  },
+                  {
+                        "word": "water",
+                        "emoji": "💧"
+                  }
+            ]
+      },
+      {
+            "name": "School",
+            "words": [
+                  {
+                        "word": "pen",
+                        "emoji": "🖊️"
+                  },
+                  {
+                        "word": "bag",
+                        "emoji": "🎒"
+                  },
+                  {
+                        "word": "book",
+                        "emoji": "📘"
+                  },
+                  {
+                        "word": "desk",
+                        "emoji": "🪑"
+                  },
+                  {
+                        "word": "star",
+                        "emoji": "⭐"
+                  },
+                  {
+                        "word": "pencil",
+                        "emoji": "✏️"
+                  },
+                  {
+                        "word": "ruler",
+                        "emoji": "📏"
+                  },
+                  {
+                        "word": "paper",
+                        "emoji": "📄"
+                  },
+                  {
+                        "word": "glue",
+                        "emoji": "🧴"
+                  },
+                  {
+                        "word": "paint",
+                        "emoji": "🎨"
+                  },
+                  {
+                        "word": "crayon",
+                        "emoji": "🖍️"
+                  },
+                  {
+                        "word": "eraser",
+                        "emoji": "⬜"
+                  },
+                  {
+                        "word": "board",
+                        "emoji": "🧑‍🏫"
+                  },
+                  {
+                        "word": "chair",
+                        "emoji": "🪑"
+                  },
+                  {
+                        "word": "bell",
+                        "emoji": "🔔"
+                  },
+                  {
+                        "word": "clock",
+                        "emoji": "🕘"
+                  },
+                  {
+                        "word": "map",
+                        "emoji": "🗺️"
+                  },
+                  {
+                        "word": "page",
+                        "emoji": "📄"
+                  },
+                  {
+                        "word": "letter",
+                        "emoji": "🔤"
+                  },
+                  {
+                        "word": "number",
+                        "emoji": "🔢"
+                  },
+                  {
+                        "word": "word",
+                        "emoji": "🔠"
+                  },
+                  {
+                        "word": "story",
+                        "emoji": "📖"
+                  },
+                  {
+                        "word": "class",
+                        "emoji": "🏫"
+                  },
+                  {
+                        "word": "teacher",
+                        "emoji": "🧑‍🏫"
+                  },
+                  {
+                        "word": "student",
+                        "emoji": "🧒"
+                  },
+                  {
+                        "word": "lesson",
+                        "emoji": "📚"
+                  },
+                  {
+                        "word": "quiz",
+                        "emoji": "✅"
+                  },
+                  {
+                        "word": "lunch",
+                        "emoji": "🥪"
+                  },
+                  {
+                        "word": "math",
+                        "emoji": "➕"
+                  },
+                  {
+                        "word": "music",
+                        "emoji": "🎵"
+                  }
+            ]
+      },
+      {
+            "name": "Family",
+            "words": [
+                  {
+                        "word": "mom",
+                        "emoji": "👩"
+                  },
+                  {
+                        "word": "dad",
+                        "emoji": "👨"
+                  },
+                  {
+                        "word": "baby",
+                        "emoji": "👶"
+                  },
+                  {
+                        "word": "sister",
+                        "emoji": "👧"
+                  },
+                  {
+                        "word": "brother",
+                        "emoji": "👦"
+                  },
+                  {
+                        "word": "grandma",
+                        "emoji": "👵"
+                  },
+                  {
+                        "word": "grandpa",
+                        "emoji": "👴"
+                  },
+                  {
+                        "word": "aunt",
+                        "emoji": "👩"
+                  },
+                  {
+                        "word": "uncle",
+                        "emoji": "👨"
+                  },
+                  {
+                        "word": "cousin",
+                        "emoji": "🧒"
+                  },
+                  {
+                        "word": "family",
+                        "emoji": "👨‍👩‍👧"
+                  },
+                  {
+                        "word": "son",
+                        "emoji": "👦"
+                  },
+                  {
+                        "word": "daughter",
+                        "emoji": "👧"
+                  },
+                  {
+                        "word": "parent",
+                        "emoji": "🧑"
+                  },
+                  {
+                        "word": "child",
+                        "emoji": "🧒"
+                  },
+                  {
+                        "word": "twins",
+                        "emoji": "👯"
+                  },
+                  {
+                        "word": "home",
+                        "emoji": "🏠"
+                  },
+                  {
+                        "word": "hug",
+                        "emoji": "🤗"
+                  },
+                  {
+                        "word": "love",
+                        "emoji": "❤️"
+                  },
+                  {
+                        "word": "help",
+                        "emoji": "🤝"
+                  },
+                  {
+                        "word": "friend",
+                        "emoji": "😊"
+                  },
+                  {
+                        "word": "team",
+                        "emoji": "👫"
+                  },
+                  {
+                        "word": "people",
+                        "emoji": "🧑‍🤝‍🧑"
+                  },
+                  {
+                        "word": "name",
+                        "emoji": "🏷️"
+                  },
+                  {
+                        "word": "face",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "smile",
+                        "emoji": "😄"
+                  },
+                  {
+                        "word": "hello",
+                        "emoji": "👋"
+                  },
+                  {
+                        "word": "bye",
+                        "emoji": "👋"
+                  },
+                  {
+                        "word": "share",
+                        "emoji": "🤲"
+                  },
+                  {
+                        "word": "care",
+                        "emoji": "💖"
+                  }
+            ]
+      },
+      {
+            "name": "Body",
+            "words": [
+                  {
+                        "word": "head",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "hair",
+                        "emoji": "💇"
+                  },
+                  {
+                        "word": "face",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "eye",
+                        "emoji": "👁️"
+                  },
+                  {
+                        "word": "ear",
+                        "emoji": "👂"
+                  },
+                  {
+                        "word": "nose",
+                        "emoji": "👃"
+                  },
+                  {
+                        "word": "mouth",
+                        "emoji": "👄"
+                  },
+                  {
+                        "word": "tooth",
+                        "emoji": "🦷"
+                  },
+                  {
+                        "word": "hand",
+                        "emoji": "✋"
+                  },
+                  {
+                        "word": "arm",
+                        "emoji": "💪"
+                  },
+                  {
+                        "word": "leg",
+                        "emoji": "🦵"
+                  },
+                  {
+                        "word": "foot",
+                        "emoji": "🦶"
+                  },
+                  {
+                        "word": "toe",
+                        "emoji": "🦶"
+                  },
+                  {
+                        "word": "finger",
+                        "emoji": "☝️"
+                  },
+                  {
+                        "word": "thumb",
+                        "emoji": "👍"
+                  },
+                  {
+                        "word": "knee",
+                        "emoji": "🦵"
+                  },
+                  {
+                        "word": "elbow",
+                        "emoji": "💪"
+                  },
+                  {
+                        "word": "back",
+                        "emoji": "🚶"
+                  },
+                  {
+                        "word": "neck",
+                        "emoji": "🧣"
+                  },
+                  {
+                        "word": "chin",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "cheek",
+                        "emoji": "😊"
+                  },
+                  {
+                        "word": "skin",
+                        "emoji": "🤚"
+                  },
+                  {
+                        "word": "bone",
+                        "emoji": "🦴"
+                  },
+                  {
+                        "word": "heart",
+                        "emoji": "❤️"
+                  },
+                  {
+                        "word": "brain",
+                        "emoji": "🧠"
+                  },
+                  {
+                        "word": "tongue",
+                        "emoji": "👅"
+                  },
+                  {
+                        "word": "lip",
+                        "emoji": "👄"
+                  },
+                  {
+                        "word": "wrist",
+                        "emoji": "⌚"
+                  },
+                  {
+                        "word": "ankle",
+                        "emoji": "🦶"
+                  },
+                  {
+                        "word": "shoulder",
+                        "emoji": "🤷"
+                  }
+            ]
+      },
+      {
+            "name": "Clothes",
+            "words": [
+                  {
+                        "word": "hat",
+                        "emoji": "🎩"
+                  },
+                  {
+                        "word": "cap",
+                        "emoji": "🧢"
+                  },
+                  {
+                        "word": "shirt",
+                        "emoji": "👕"
+                  },
+                  {
+                        "word": "dress",
+                        "emoji": "👗"
+                  },
+                  {
+                        "word": "skirt",
+                        "emoji": "👗"
+                  },
+                  {
+                        "word": "pants",
+                        "emoji": "👖"
+                  },
+                  {
+                        "word": "jeans",
+                        "emoji": "👖"
+                  },
+                  {
+                        "word": "coat",
+                        "emoji": "🧥"
+                  },
+                  {
+                        "word": "sock",
+                        "emoji": "🧦"
+                  },
+                  {
+                        "word": "shoe",
+                        "emoji": "👟"
+                  },
+                  {
+                        "word": "boot",
+                        "emoji": "🥾"
+                  },
+                  {
+                        "word": "scarf",
+                        "emoji": "🧣"
+                  },
+                  {
+                        "word": "glove",
+                        "emoji": "🧤"
+                  },
+                  {
+                        "word": "belt",
+                        "emoji": "🧵"
+                  },
+                  {
+                        "word": "watch",
+                        "emoji": "⌚"
+                  },
+                  {
+                        "word": "bag",
+                        "emoji": "👜"
+                  },
+                  {
+                        "word": "tie",
+                        "emoji": "👔"
+                  },
+                  {
+                        "word": "vest",
+                        "emoji": "🦺"
+                  },
+                  {
+                        "word": "shorts",
+                        "emoji": "🩳"
+                  },
+                  {
+                        "word": "suit",
+                        "emoji": "🤵"
+                  },
+                  {
+                        "word": "pocket",
+                        "emoji": "👖"
+                  },
+                  {
+                        "word": "button",
+                        "emoji": "🔘"
+                  },
+                  {
+                        "word": "zip",
+                        "emoji": "🤐"
+                  },
+                  {
+                        "word": "hood",
+                        "emoji": "🧥"
+                  },
+                  {
+                        "word": "sneaker",
+                        "emoji": "👟"
+                  },
+                  {
+                        "word": "pajamas",
+                        "emoji": "🛌"
+                  },
+                  {
+                        "word": "uniform",
+                        "emoji": "🎒"
+                  },
+                  {
+                        "word": "crown",
+                        "emoji": "👑"
+                  },
+                  {
+                        "word": "ring",
+                        "emoji": "💍"
+                  },
+                  {
+                        "word": "glasses",
+                        "emoji": "👓"
+                  }
+            ]
+      },
+      {
+            "name": "Toys",
+            "words": [
+                  {
+                        "word": "toy",
+                        "emoji": "🧸"
+                  },
+                  {
+                        "word": "doll",
+                        "emoji": "🪆"
+                  },
+                  {
+                        "word": "ball",
+                        "emoji": "⚽"
+                  },
+                  {
+                        "word": "kite",
+                        "emoji": "🪁"
+                  },
+                  {
+                        "word": "blocks",
+                        "emoji": "🧱"
+                  },
+                  {
+                        "word": "train",
+                        "emoji": "🚂"
+                  },
+                  {
+                        "word": "car",
+                        "emoji": "🚗"
+                  },
+                  {
+                        "word": "truck",
+                        "emoji": "🚚"
+                  },
+                  {
+                        "word": "robot",
+                        "emoji": "🤖"
+                  },
+                  {
+                        "word": "bear",
+                        "emoji": "🧸"
+                  },
+                  {
+                        "word": "puzzle",
+                        "emoji": "🧩"
+                  },
+                  {
+                        "word": "yo-yo",
+                        "emoji": "🪀"
+                  },
+                  {
+                        "word": "drum",
+                        "emoji": "🥁"
+                  },
+                  {
+                        "word": "horn",
+                        "emoji": "📯"
+                  },
+                  {
+                        "word": "plane",
+                        "emoji": "✈️"
+                  },
+                  {
+                        "word": "boat",
+                        "emoji": "⛵"
+                  },
+                  {
+                        "word": "rocket",
+                        "emoji": "🚀"
+                  },
+                  {
+                        "word": "game",
+                        "emoji": "🎮"
+                  },
+                  {
+                        "word": "dice",
+                        "emoji": "🎲"
+                  },
+                  {
+                        "word": "cards",
+                        "emoji": "🃏"
+                  },
+                  {
+                        "word": "top",
+                        "emoji": "🌀"
+                  },
+                  {
+                        "word": "rope",
+                        "emoji": "🪢"
+                  },
+                  {
+                        "word": "bike",
+                        "emoji": "🚲"
+                  },
+                  {
+                        "word": "scooter",
+                        "emoji": "🛴"
+                  },
+                  {
+                        "word": "slide",
+                        "emoji": "🛝"
+                  },
+                  {
+                        "word": "swing",
+                        "emoji": "🛝"
+                  },
+                  {
+                        "word": "castle",
+                        "emoji": "🏰"
+                  },
+                  {
+                        "word": "cubes",
+                        "emoji": "🧊"
+                  },
+                  {
+                        "word": "marble",
+                        "emoji": "🔮"
+                  },
+                  {
+                        "word": "mask",
+                        "emoji": "🎭"
+                  }
+            ]
+      },
+      {
+            "name": "Home",
+            "words": [
+                  {
+                        "word": "home",
+                        "emoji": "🏠"
+                  },
+                  {
+                        "word": "house",
+                        "emoji": "🏡"
+                  },
+                  {
+                        "word": "room",
+                        "emoji": "🚪"
+                  },
+                  {
+                        "word": "door",
+                        "emoji": "🚪"
+                  },
+                  {
+                        "word": "window",
+                        "emoji": "🪟"
+                  },
+                  {
+                        "word": "bed",
+                        "emoji": "🛏️"
+                  },
+                  {
+                        "word": "lamp",
+                        "emoji": "💡"
+                  },
+                  {
+                        "word": "sofa",
+                        "emoji": "🛋️"
+                  },
+                  {
+                        "word": "table",
+                        "emoji": "🪑"
+                  },
+                  {
+                        "word": "chair",
+                        "emoji": "🪑"
+                  },
+                  {
+                        "word": "bath",
+                        "emoji": "🛁"
+                  },
+                  {
+                        "word": "sink",
+                        "emoji": "🚰"
+                  },
+                  {
+                        "word": "toilet",
+                        "emoji": "🚽"
+                  },
+                  {
+                        "word": "rug",
+                        "emoji": "🟫"
+                  },
+                  {
+                        "word": "floor",
+                        "emoji": "⬜"
+                  },
+                  {
+                        "word": "wall",
+                        "emoji": "🧱"
+                  },
+                  {
+                        "word": "roof",
+                        "emoji": "🏠"
+                  },
+                  {
+                        "word": "stairs",
+                        "emoji": "🪜"
+                  },
+                  {
+                        "word": "kitchen",
+                        "emoji": "🍳"
+                  },
+                  {
+                        "word": "garden",
+                        "emoji": "🌷"
+                  },
+                  {
+                        "word": "yard",
+                        "emoji": "🌳"
+                  },
+                  {
+                        "word": "garage",
+                        "emoji": "🚗"
+                  },
+                  {
+                        "word": "key",
+                        "emoji": "🔑"
+                  },
+                  {
+                        "word": "lock",
+                        "emoji": "🔒"
+                  },
+                  {
+                        "word": "clock",
+                        "emoji": "🕘"
+                  },
+                  {
+                        "word": "mirror",
+                        "emoji": "🪞"
+                  },
+                  {
+                        "word": "phone",
+                        "emoji": "☎️"
+                  },
+                  {
+                        "word": "plant",
+                        "emoji": "🪴"
+                  },
+                  {
+                        "word": "pillow",
+                        "emoji": "🛏️"
+                  },
+                  {
+                        "word": "blanket",
+                        "emoji": "🛌"
+                  }
+            ]
+      },
+      {
+            "name": "Weather",
+            "words": [
+                  {
+                        "word": "sun",
+                        "emoji": "☀️"
+                  },
+                  {
+                        "word": "rain",
+                        "emoji": "🌧️"
+                  },
+                  {
+                        "word": "snow",
+                        "emoji": "❄️"
+                  },
+                  {
+                        "word": "wind",
+                        "emoji": "💨"
+                  },
+                  {
+                        "word": "cloud",
+                        "emoji": "☁️"
+                  },
+                  {
+                        "word": "storm",
+                        "emoji": "⛈️"
+                  },
+                  {
+                        "word": "fog",
+                        "emoji": "🌫️"
+                  },
+                  {
+                        "word": "ice",
+                        "emoji": "🧊"
+                  },
+                  {
+                        "word": "hot",
+                        "emoji": "🥵"
+                  },
+                  {
+                        "word": "cold",
+                        "emoji": "🥶"
+                  },
+                  {
+                        "word": "warm",
+                        "emoji": "🌤️"
+                  },
+                  {
+                        "word": "cool",
+                        "emoji": "🍃"
+                  },
+                  {
+                        "word": "wet",
+                        "emoji": "💧"
+                  },
+                  {
+                        "word": "dry",
+                        "emoji": "🏜️"
+                  },
+                  {
+                        "word": "rainbow",
+                        "emoji": "🌈"
+                  },
+                  {
+                        "word": "sky",
+                        "emoji": "☁️"
+                  },
+                  {
+                        "word": "moon",
+                        "emoji": "🌙"
+                  },
+                  {
+                        "word": "star",
+                        "emoji": "⭐"
+                  },
+                  {
+                        "word": "thunder",
+                        "emoji": "⚡"
+                  },
+                  {
+                        "word": "light",
+                        "emoji": "💡"
+                  },
+                  {
+                        "word": "dark",
+                        "emoji": "🌑"
+                  },
+                  {
+                        "word": "winter",
+                        "emoji": "☃️"
+                  },
+                  {
+                        "word": "spring",
+                        "emoji": "🌷"
+                  },
+                  {
+                        "word": "summer",
+                        "emoji": "🏖️"
+                  },
+                  {
+                        "word": "fall",
+                        "emoji": "🍂"
+                  },
+                  {
+                        "word": "breeze",
+                        "emoji": "🍃"
+                  },
+                  {
+                        "word": "freeze",
+                        "emoji": "🧊"
+                  },
+                  {
+                        "word": "shine",
+                        "emoji": "✨"
+                  },
+                  {
+                        "word": "drip",
+                        "emoji": "💧"
+                  },
+                  {
+                        "word": "puddle",
+                        "emoji": "💦"
+                  }
+            ]
+      },
+      {
+            "name": "Nature",
+            "words": [
+                  {
+                        "word": "tree",
+                        "emoji": "🌳"
+                  },
+                  {
+                        "word": "leaf",
+                        "emoji": "🍃"
+                  },
+                  {
+                        "word": "flower",
+                        "emoji": "🌸"
+                  },
+                  {
+                        "word": "grass",
+                        "emoji": "🌱"
+                  },
+                  {
+                        "word": "rock",
+                        "emoji": "🪨"
+                  },
+                  {
+                        "word": "hill",
+                        "emoji": "⛰️"
+                  },
+                  {
+                        "word": "mountain",
+                        "emoji": "🏔️"
+                  },
+                  {
+                        "word": "river",
+                        "emoji": "🏞️"
+                  },
+                  {
+                        "word": "lake",
+                        "emoji": "🏞️"
+                  },
+                  {
+                        "word": "sea",
+                        "emoji": "🌊"
+                  },
+                  {
+                        "word": "beach",
+                        "emoji": "🏖️"
+                  },
+                  {
+                        "word": "sand",
+                        "emoji": "🏖️"
+                  },
+                  {
+                        "word": "mud",
+                        "emoji": "🟫"
+                  },
+                  {
+                        "word": "seed",
+                        "emoji": "🌰"
+                  },
+                  {
+                        "word": "root",
+                        "emoji": "🌱"
+                  },
+                  {
+                        "word": "branch",
+                        "emoji": "🌿"
+                  },
+                  {
+                        "word": "bush",
+                        "emoji": "🌳"
+                  },
+                  {
+                        "word": "forest",
+                        "emoji": "🌲"
+                  },
+                  {
+                        "word": "jungle",
+                        "emoji": "🌴"
+                  },
+                  {
+                        "word": "desert",
+                        "emoji": "🏜️"
+                  },
+                  {
+                        "word": "field",
+                        "emoji": "🌾"
+                  },
+                  {
+                        "word": "farm",
+                        "emoji": "🚜"
+                  },
+                  {
+                        "word": "pond",
+                        "emoji": "🪷"
+                  },
+                  {
+                        "word": "water",
+                        "emoji": "💧"
+                  },
+                  {
+                        "word": "stone",
+                        "emoji": "🪨"
+                  },
+                  {
+                        "word": "shell",
+                        "emoji": "🐚"
+                  },
+                  {
+                        "word": "nest",
+                        "emoji": "🪺"
+                  },
+                  {
+                        "word": "web",
+                        "emoji": "🕸️"
+                  },
+                  {
+                        "word": "moss",
+                        "emoji": "🌿"
+                  },
+                  {
+                        "word": "trail",
+                        "emoji": "🥾"
+                  }
+            ]
+      },
+      {
+            "name": "Actions",
+            "words": [
+                  {
+                        "word": "run",
+                        "emoji": "🏃"
+                  },
+                  {
+                        "word": "walk",
+                        "emoji": "🚶"
+                  },
+                  {
+                        "word": "jump",
+                        "emoji": "🦘"
+                  },
+                  {
+                        "word": "hop",
+                        "emoji": "🐇"
+                  },
+                  {
+                        "word": "sit",
+                        "emoji": "🪑"
+                  },
+                  {
+                        "word": "stand",
+                        "emoji": "🧍"
+                  },
+                  {
+                        "word": "look",
+                        "emoji": "👀"
+                  },
+                  {
+                        "word": "see",
+                        "emoji": "👁️"
+                  },
+                  {
+                        "word": "hear",
+                        "emoji": "👂"
+                  },
+                  {
+                        "word": "talk",
+                        "emoji": "💬"
+                  },
+                  {
+                        "word": "sing",
+                        "emoji": "🎤"
+                  },
+                  {
+                        "word": "read",
+                        "emoji": "📖"
+                  },
+                  {
+                        "word": "write",
+                        "emoji": "✏️"
+                  },
+                  {
+                        "word": "draw",
+                        "emoji": "🎨"
+                  },
+                  {
+                        "word": "paint",
+                        "emoji": "🖌️"
+                  },
+                  {
+                        "word": "play",
+                        "emoji": "🎮"
+                  },
+                  {
+                        "word": "eat",
+                        "emoji": "🍽️"
+                  },
+                  {
+                        "word": "drink",
+                        "emoji": "🥤"
+                  },
+                  {
+                        "word": "sleep",
+                        "emoji": "😴"
+                  },
+                  {
+                        "word": "wake",
+                        "emoji": "⏰"
+                  },
+                  {
+                        "word": "wash",
+                        "emoji": "🧼"
+                  },
+                  {
+                        "word": "brush",
+                        "emoji": "🪥"
+                  },
+                  {
+                        "word": "open",
+                        "emoji": "📖"
+                  },
+                  {
+                        "word": "close",
+                        "emoji": "📕"
+                  },
+                  {
+                        "word": "push",
+                        "emoji": "👉"
+                  },
+                  {
+                        "word": "pull",
+                        "emoji": "👈"
+                  },
+                  {
+                        "word": "give",
+                        "emoji": "🎁"
+                  },
+                  {
+                        "word": "take",
+                        "emoji": "🤲"
+                  },
+                  {
+                        "word": "make",
+                        "emoji": "🛠️"
+                  },
+                  {
+                        "word": "help",
+                        "emoji": "🤝"
+                  }
+            ]
+      },
+      {
+            "name": "Feelings",
+            "words": [
+                  {
+                        "word": "happy",
+                        "emoji": "😊"
+                  },
+                  {
+                        "word": "sad",
+                        "emoji": "😢"
+                  },
+                  {
+                        "word": "mad",
+                        "emoji": "😠"
+                  },
+                  {
+                        "word": "scared",
+                        "emoji": "😨"
+                  },
+                  {
+                        "word": "tired",
+                        "emoji": "😴"
+                  },
+                  {
+                        "word": "sleepy",
+                        "emoji": "😪"
+                  },
+                  {
+                        "word": "sick",
+                        "emoji": "🤒"
+                  },
+                  {
+                        "word": "well",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "hungry",
+                        "emoji": "😋"
+                  },
+                  {
+                        "word": "thirsty",
+                        "emoji": "🥤"
+                  },
+                  {
+                        "word": "proud",
+                        "emoji": "😌"
+                  },
+                  {
+                        "word": "shy",
+                        "emoji": "☺️"
+                  },
+                  {
+                        "word": "brave",
+                        "emoji": "🦸"
+                  },
+                  {
+                        "word": "kind",
+                        "emoji": "💖"
+                  },
+                  {
+                        "word": "nice",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "funny",
+                        "emoji": "😄"
+                  },
+                  {
+                        "word": "silly",
+                        "emoji": "🤪"
+                  },
+                  {
+                        "word": "calm",
+                        "emoji": "😌"
+                  },
+                  {
+                        "word": "angry",
+                        "emoji": "😡"
+                  },
+                  {
+                        "word": "worried",
+                        "emoji": "😟"
+                  },
+                  {
+                        "word": "bored",
+                        "emoji": "🥱"
+                  },
+                  {
+                        "word": "excited",
+                        "emoji": "🤩"
+                  },
+                  {
+                        "word": "surprised",
+                        "emoji": "😮"
+                  },
+                  {
+                        "word": "lonely",
+                        "emoji": "🧍"
+                  },
+                  {
+                        "word": "glad",
+                        "emoji": "😊"
+                  },
+                  {
+                        "word": "sorry",
+                        "emoji": "🙏"
+                  },
+                  {
+                        "word": "safe",
+                        "emoji": "🛡️"
+                  },
+                  {
+                        "word": "ready",
+                        "emoji": "✅"
+                  },
+                  {
+                        "word": "busy",
+                        "emoji": "📚"
+                  },
+                  {
+                        "word": "quiet",
+                        "emoji": "🤫"
+                  }
+            ]
+      },
+      {
+            "name": "Shapes",
+            "words": [
+                  {
+                        "word": "circle",
+                        "emoji": "⭕"
+                  },
+                  {
+                        "word": "square",
+                        "emoji": "⬛"
+                  },
+                  {
+                        "word": "star",
+                        "emoji": "⭐"
+                  },
+                  {
+                        "word": "heart",
+                        "emoji": "❤️"
+                  },
+                  {
+                        "word": "oval",
+                        "emoji": "🥚"
+                  },
+                  {
+                        "word": "cube",
+                        "emoji": "🧊"
+                  },
+                  {
+                        "word": "line",
+                        "emoji": "➖"
+                  },
+                  {
+                        "word": "dot",
+                        "emoji": "⚫"
+                  },
+                  {
+                        "word": "cross",
+                        "emoji": "❌"
+                  },
+                  {
+                        "word": "arrow",
+                        "emoji": "➡️"
+                  },
+                  {
+                        "word": "diamond",
+                        "emoji": "🔷"
+                  },
+                  {
+                        "word": "triangle",
+                        "emoji": "🔺"
+                  },
+                  {
+                        "word": "box",
+                        "emoji": "📦"
+                  },
+                  {
+                        "word": "ring",
+                        "emoji": "💍"
+                  },
+                  {
+                        "word": "cone",
+                        "emoji": "🍦"
+                  },
+                  {
+                        "word": "ball",
+                        "emoji": "⚽"
+                  },
+                  {
+                        "word": "moon",
+                        "emoji": "🌙"
+                  },
+                  {
+                        "word": "edge",
+                        "emoji": "📐"
+                  },
+                  {
+                        "word": "side",
+                        "emoji": "📏"
+                  },
+                  {
+                        "word": "corner",
+                        "emoji": "📐"
+                  },
+                  {
+                        "word": "point",
+                        "emoji": "📍"
+                  },
+                  {
+                        "word": "curve",
+                        "emoji": "〰️"
+                  },
+                  {
+                        "word": "flat",
+                        "emoji": "⬜"
+                  },
+                  {
+                        "word": "round",
+                        "emoji": "⚪"
+                  },
+                  {
+                        "word": "tall",
+                        "emoji": "🗼"
+                  },
+                  {
+                        "word": "short",
+                        "emoji": "🤏"
+                  },
+                  {
+                        "word": "long",
+                        "emoji": "📏"
+                  },
+                  {
+                        "word": "wide",
+                        "emoji": "↔️"
+                  },
+                  {
+                        "word": "thin",
+                        "emoji": "🧵"
+                  },
+                  {
+                        "word": "thick",
+                        "emoji": "🧱"
+                  }
+            ]
+      },
+      {
+            "name": "Places",
+            "words": [
+                  {
+                        "word": "park",
+                        "emoji": "🌳"
+                  },
+                  {
+                        "word": "school",
+                        "emoji": "🏫"
+                  },
+                  {
+                        "word": "store",
+                        "emoji": "🏪"
+                  },
+                  {
+                        "word": "zoo",
+                        "emoji": "🦁"
+                  },
+                  {
+                        "word": "farm",
+                        "emoji": "🚜"
+                  },
+                  {
+                        "word": "beach",
+                        "emoji": "🏖️"
+                  },
+                  {
+                        "word": "home",
+                        "emoji": "🏠"
+                  },
+                  {
+                        "word": "street",
+                        "emoji": "🛣️"
+                  },
+                  {
+                        "word": "road",
+                        "emoji": "🛣️"
+                  },
+                  {
+                        "word": "city",
+                        "emoji": "🏙️"
+                  },
+                  {
+                        "word": "town",
+                        "emoji": "🏘️"
+                  },
+                  {
+                        "word": "shop",
+                        "emoji": "🏪"
+                  },
+                  {
+                        "word": "class",
+                        "emoji": "🏫"
+                  },
+                  {
+                        "word": "room",
+                        "emoji": "🚪"
+                  },
+                  {
+                        "word": "yard",
+                        "emoji": "🌳"
+                  },
+                  {
+                        "word": "pool",
+                        "emoji": "🏊"
+                  },
+                  {
+                        "word": "library",
+                        "emoji": "📚"
+                  },
+                  {
+                        "word": "clinic",
+                        "emoji": "🏥"
+                  },
+                  {
+                        "word": "bank",
+                        "emoji": "🏦"
+                  },
+                  {
+                        "word": "station",
+                        "emoji": "🚉"
+                  },
+                  {
+                        "word": "airport",
+                        "emoji": "✈️"
+                  },
+                  {
+                        "word": "garden",
+                        "emoji": "🌷"
+                  },
+                  {
+                        "word": "forest",
+                        "emoji": "🌲"
+                  },
+                  {
+                        "word": "camp",
+                        "emoji": "⛺"
+                  },
+                  {
+                        "word": "hill",
+                        "emoji": "⛰️"
+                  },
+                  {
+                        "word": "bridge",
+                        "emoji": "🌉"
+                  },
+                  {
+                        "word": "castle",
+                        "emoji": "🏰"
+                  },
+                  {
+                        "word": "museum",
+                        "emoji": "🏛️"
+                  },
+                  {
+                        "word": "market",
+                        "emoji": "🛒"
+                  },
+                  {
+                        "word": "cafe",
+                        "emoji": "☕"
+                  }
+            ]
+      },
+      {
+            "name": "Transport",
+            "words": [
+                  {
+                        "word": "car",
+                        "emoji": "🚗"
+                  },
+                  {
+                        "word": "bus",
+                        "emoji": "🚌"
+                  },
+                  {
+                        "word": "van",
+                        "emoji": "🚐"
+                  },
+                  {
+                        "word": "taxi",
+                        "emoji": "🚕"
+                  },
+                  {
+                        "word": "train",
+                        "emoji": "🚂"
+                  },
+                  {
+                        "word": "plane",
+                        "emoji": "✈️"
+                  },
+                  {
+                        "word": "boat",
+                        "emoji": "⛵"
+                  },
+                  {
+                        "word": "ship",
+                        "emoji": "🚢"
+                  },
+                  {
+                        "word": "bike",
+                        "emoji": "🚲"
+                  },
+                  {
+                        "word": "truck",
+                        "emoji": "🚚"
+                  },
+                  {
+                        "word": "tram",
+                        "emoji": "🚊"
+                  },
+                  {
+                        "word": "scooter",
+                        "emoji": "🛴"
+                  },
+                  {
+                        "word": "rocket",
+                        "emoji": "🚀"
+                  },
+                  {
+                        "word": "subway",
+                        "emoji": "🚇"
+                  },
+                  {
+                        "word": "jeep",
+                        "emoji": "🚙"
+                  },
+                  {
+                        "word": "cart",
+                        "emoji": "🛒"
+                  },
+                  {
+                        "word": "sled",
+                        "emoji": "🛷"
+                  },
+                  {
+                        "word": "skate",
+                        "emoji": "🛼"
+                  },
+                  {
+                        "word": "wheel",
+                        "emoji": "🛞"
+                  },
+                  {
+                        "word": "road",
+                        "emoji": "🛣️"
+                  },
+                  {
+                        "word": "track",
+                        "emoji": "🛤️"
+                  },
+                  {
+                        "word": "driver",
+                        "emoji": "🧑‍✈️"
+                  },
+                  {
+                        "word": "pilot",
+                        "emoji": "🧑‍✈️"
+                  },
+                  {
+                        "word": "ride",
+                        "emoji": "🎢"
+                  },
+                  {
+                        "word": "stop",
+                        "emoji": "🛑"
+                  },
+                  {
+                        "word": "go",
+                        "emoji": "🟢"
+                  },
+                  {
+                        "word": "fast",
+                        "emoji": "🏎️"
+                  },
+                  {
+                        "word": "slow",
+                        "emoji": "🐢"
+                  },
+                  {
+                        "word": "ticket",
+                        "emoji": "🎟️"
+                  },
+                  {
+                        "word": "map",
+                        "emoji": "🗺️"
+                  }
+            ]
+      },
+      {
+            "name": "Sports",
+            "words": [
+                  {
+                        "word": "ball",
+                        "emoji": "⚽"
+                  },
+                  {
+                        "word": "bat",
+                        "emoji": "🏏"
+                  },
+                  {
+                        "word": "run",
+                        "emoji": "🏃"
+                  },
+                  {
+                        "word": "jump",
+                        "emoji": "🦘"
+                  },
+                  {
+                        "word": "swim",
+                        "emoji": "🏊"
+                  },
+                  {
+                        "word": "kick",
+                        "emoji": "🦵"
+                  },
+                  {
+                        "word": "throw",
+                        "emoji": "🤾"
+                  },
+                  {
+                        "word": "catch",
+                        "emoji": "🧤"
+                  },
+                  {
+                        "word": "hit",
+                        "emoji": "🏏"
+                  },
+                  {
+                        "word": "team",
+                        "emoji": "👥"
+                  },
+                  {
+                        "word": "goal",
+                        "emoji": "🥅"
+                  },
+                  {
+                        "word": "race",
+                        "emoji": "🏁"
+                  },
+                  {
+                        "word": "tennis",
+                        "emoji": "🎾"
+                  },
+                  {
+                        "word": "soccer",
+                        "emoji": "⚽"
+                  },
+                  {
+                        "word": "golf",
+                        "emoji": "⛳"
+                  },
+                  {
+                        "word": "basket",
+                        "emoji": "🏀"
+                  },
+                  {
+                        "word": "baseball",
+                        "emoji": "⚾"
+                  },
+                  {
+                        "word": "hockey",
+                        "emoji": "🏒"
+                  },
+                  {
+                        "word": "skate",
+                        "emoji": "🛼"
+                  },
+                  {
+                        "word": "ski",
+                        "emoji": "🎿"
+                  },
+                  {
+                        "word": "bike",
+                        "emoji": "🚲"
+                  },
+                  {
+                        "word": "dance",
+                        "emoji": "💃"
+                  },
+                  {
+                        "word": "climb",
+                        "emoji": "🧗"
+                  },
+                  {
+                        "word": "yoga",
+                        "emoji": "🧘"
+                  },
+                  {
+                        "word": "score",
+                        "emoji": "🏆"
+                  },
+                  {
+                        "word": "win",
+                        "emoji": "🏆"
+                  },
+                  {
+                        "word": "coach",
+                        "emoji": "📣"
+                  },
+                  {
+                        "word": "field",
+                        "emoji": "🏟️"
+                  },
+                  {
+                        "word": "pool",
+                        "emoji": "🏊"
+                  },
+                  {
+                        "word": "net",
+                        "emoji": "🥅"
+                  }
+            ]
+      },
+      {
+            "name": "Music",
+            "words": [
+                  {
+                        "word": "song",
+                        "emoji": "🎵"
+                  },
+                  {
+                        "word": "sing",
+                        "emoji": "🎤"
+                  },
+                  {
+                        "word": "drum",
+                        "emoji": "🥁"
+                  },
+                  {
+                        "word": "bell",
+                        "emoji": "🔔"
+                  },
+                  {
+                        "word": "horn",
+                        "emoji": "📯"
+                  },
+                  {
+                        "word": "piano",
+                        "emoji": "🎹"
+                  },
+                  {
+                        "word": "guitar",
+                        "emoji": "🎸"
+                  },
+                  {
+                        "word": "violin",
+                        "emoji": "🎻"
+                  },
+                  {
+                        "word": "flute",
+                        "emoji": "🎶"
+                  },
+                  {
+                        "word": "beat",
+                        "emoji": "🥁"
+                  },
+                  {
+                        "word": "note",
+                        "emoji": "🎵"
+                  },
+                  {
+                        "word": "band",
+                        "emoji": "🎺"
+                  },
+                  {
+                        "word": "dance",
+                        "emoji": "💃"
+                  },
+                  {
+                        "word": "clap",
+                        "emoji": "👏"
+                  },
+                  {
+                        "word": "tap",
+                        "emoji": "👆"
+                  },
+                  {
+                        "word": "loud",
+                        "emoji": "🔊"
+                  },
+                  {
+                        "word": "soft",
+                        "emoji": "🔉"
+                  },
+                  {
+                        "word": "quiet",
+                        "emoji": "🤫"
+                  },
+                  {
+                        "word": "voice",
+                        "emoji": "🗣️"
+                  },
+                  {
+                        "word": "sound",
+                        "emoji": "🔊"
+                  },
+                  {
+                        "word": "radio",
+                        "emoji": "📻"
+                  },
+                  {
+                        "word": "music",
+                        "emoji": "🎶"
+                  },
+                  {
+                        "word": "tune",
+                        "emoji": "🎵"
+                  },
+                  {
+                        "word": "choir",
+                        "emoji": "👥"
+                  },
+                  {
+                        "word": "stage",
+                        "emoji": "🎭"
+                  },
+                  {
+                        "word": "mic",
+                        "emoji": "🎙️"
+                  },
+                  {
+                        "word": "harp",
+                        "emoji": "🎼"
+                  },
+                  {
+                        "word": "rap",
+                        "emoji": "🎤"
+                  },
+                  {
+                        "word": "pop",
+                        "emoji": "🎵"
+                  },
+                  {
+                        "word": "jazz",
+                        "emoji": "🎷"
+                  }
+            ]
+      },
+      {
+            "name": "Jobs",
+            "words": [
+                  {
+                        "word": "teacher",
+                        "emoji": "🧑‍🏫"
+                  },
+                  {
+                        "word": "doctor",
+                        "emoji": "🧑‍⚕️"
+                  },
+                  {
+                        "word": "nurse",
+                        "emoji": "👩‍⚕️"
+                  },
+                  {
+                        "word": "cook",
+                        "emoji": "🧑‍🍳"
+                  },
+                  {
+                        "word": "farmer",
+                        "emoji": "🧑‍🌾"
+                  },
+                  {
+                        "word": "pilot",
+                        "emoji": "🧑‍✈️"
+                  },
+                  {
+                        "word": "driver",
+                        "emoji": "🚗"
+                  },
+                  {
+                        "word": "artist",
+                        "emoji": "🧑‍🎨"
+                  },
+                  {
+                        "word": "singer",
+                        "emoji": "🎤"
+                  },
+                  {
+                        "word": "dancer",
+                        "emoji": "💃"
+                  },
+                  {
+                        "word": "builder",
+                        "emoji": "👷"
+                  },
+                  {
+                        "word": "police",
+                        "emoji": "👮"
+                  },
+                  {
+                        "word": "fireman",
+                        "emoji": "🧑‍🚒"
+                  },
+                  {
+                        "word": "dentist",
+                        "emoji": "🦷"
+                  },
+                  {
+                        "word": "baker",
+                        "emoji": "🥐"
+                  },
+                  {
+                        "word": "vet",
+                        "emoji": "🐶"
+                  },
+                  {
+                        "word": "mailman",
+                        "emoji": "📬"
+                  },
+                  {
+                        "word": "cashier",
+                        "emoji": "🏪"
+                  },
+                  {
+                        "word": "clerk",
+                        "emoji": "💼"
+                  },
+                  {
+                        "word": "guard",
+                        "emoji": "🛡️"
+                  },
+                  {
+                        "word": "coach",
+                        "emoji": "📣"
+                  },
+                  {
+                        "word": "writer",
+                        "emoji": "✏️"
+                  },
+                  {
+                        "word": "reader",
+                        "emoji": "📖"
+                  },
+                  {
+                        "word": "cleaner",
+                        "emoji": "🧹"
+                  },
+                  {
+                        "word": "tailor",
+                        "emoji": "🧵"
+                  },
+                  {
+                        "word": "barber",
+                        "emoji": "💈"
+                  },
+                  {
+                        "word": "actor",
+                        "emoji": "🎭"
+                  },
+                  {
+                        "word": "clown",
+                        "emoji": "🤡"
+                  },
+                  {
+                        "word": "judge",
+                        "emoji": "⚖️"
+                  },
+                  {
+                        "word": "chef",
+                        "emoji": "🧑‍🍳"
+                  }
+            ]
+      },
+      {
+            "name": "Time",
+            "words": [
+                  {
+                        "word": "day",
+                        "emoji": "☀️"
+                  },
+                  {
+                        "word": "night",
+                        "emoji": "🌙"
+                  },
+                  {
+                        "word": "morning",
+                        "emoji": "🌅"
+                  },
+                  {
+                        "word": "noon",
+                        "emoji": "☀️"
+                  },
+                  {
+                        "word": "evening",
+                        "emoji": "🌆"
+                  },
+                  {
+                        "word": "today",
+                        "emoji": "📅"
+                  },
+                  {
+                        "word": "tomorrow",
+                        "emoji": "➡️"
+                  },
+                  {
+                        "word": "week",
+                        "emoji": "🗓️"
+                  },
+                  {
+                        "word": "month",
+                        "emoji": "📆"
+                  },
+                  {
+                        "word": "year",
+                        "emoji": "🎉"
+                  },
+                  {
+                        "word": "hour",
+                        "emoji": "🕐"
+                  },
+                  {
+                        "word": "minute",
+                        "emoji": "⏱️"
+                  },
+                  {
+                        "word": "clock",
+                        "emoji": "🕘"
+                  },
+                  {
+                        "word": "early",
+                        "emoji": "🌅"
+                  },
+                  {
+                        "word": "late",
+                        "emoji": "🌙"
+                  },
+                  {
+                        "word": "now",
+                        "emoji": "⏰"
+                  },
+                  {
+                        "word": "soon",
+                        "emoji": "🔜"
+                  },
+                  {
+                        "word": "before",
+                        "emoji": "⬅️"
+                  },
+                  {
+                        "word": "after",
+                        "emoji": "➡️"
+                  },
+                  {
+                        "word": "always",
+                        "emoji": "🔁"
+                  },
+                  {
+                        "word": "never",
+                        "emoji": "🚫"
+                  },
+                  {
+                        "word": "again",
+                        "emoji": "🔄"
+                  },
+                  {
+                        "word": "first",
+                        "emoji": "🥇"
+                  },
+                  {
+                        "word": "last",
+                        "emoji": "🏁"
+                  },
+                  {
+                        "word": "next",
+                        "emoji": "➡️"
+                  },
+                  {
+                        "word": "old",
+                        "emoji": "👴"
+                  },
+                  {
+                        "word": "new",
+                        "emoji": "🆕"
+                  },
+                  {
+                        "word": "fast",
+                        "emoji": "⚡"
+                  },
+                  {
+                        "word": "slow",
+                        "emoji": "🐢"
+                  },
+                  {
+                        "word": "wait",
+                        "emoji": "⏳"
+                  }
+            ]
+      },
+      {
+            "name": "Opposites",
+            "words": [
+                  {
+                        "word": "big",
+                        "emoji": "🐘"
+                  },
+                  {
+                        "word": "small",
+                        "emoji": "🐭"
+                  },
+                  {
+                        "word": "hot",
+                        "emoji": "🥵"
+                  },
+                  {
+                        "word": "cold",
+                        "emoji": "🥶"
+                  },
+                  {
+                        "word": "up",
+                        "emoji": "⬆️"
+                  },
+                  {
+                        "word": "down",
+                        "emoji": "⬇️"
+                  },
+                  {
+                        "word": "in",
+                        "emoji": "📥"
+                  },
+                  {
+                        "word": "out",
+                        "emoji": "📤"
+                  },
+                  {
+                        "word": "on",
+                        "emoji": "🔛"
+                  },
+                  {
+                        "word": "off",
+                        "emoji": "🔘"
+                  },
+                  {
+                        "word": "open",
+                        "emoji": "📖"
+                  },
+                  {
+                        "word": "shut",
+                        "emoji": "📕"
+                  },
+                  {
+                        "word": "full",
+                        "emoji": "🈵"
+                  },
+                  {
+                        "word": "empty",
+                        "emoji": "⬜"
+                  },
+                  {
+                        "word": "wet",
+                        "emoji": "💧"
+                  },
+                  {
+                        "word": "dry",
+                        "emoji": "🏜️"
+                  },
+                  {
+                        "word": "fast",
+                        "emoji": "⚡"
+                  },
+                  {
+                        "word": "slow",
+                        "emoji": "🐢"
+                  },
+                  {
+                        "word": "happy",
+                        "emoji": "😊"
+                  },
+                  {
+                        "word": "sad",
+                        "emoji": "😢"
+                  },
+                  {
+                        "word": "day",
+                        "emoji": "☀️"
+                  },
+                  {
+                        "word": "night",
+                        "emoji": "🌙"
+                  },
+                  {
+                        "word": "light",
+                        "emoji": "💡"
+                  },
+                  {
+                        "word": "dark",
+                        "emoji": "🌑"
+                  },
+                  {
+                        "word": "near",
+                        "emoji": "📍"
+                  },
+                  {
+                        "word": "far",
+                        "emoji": "🏔️"
+                  },
+                  {
+                        "word": "left",
+                        "emoji": "⬅️"
+                  },
+                  {
+                        "word": "right",
+                        "emoji": "➡️"
+                  },
+                  {
+                        "word": "yes",
+                        "emoji": "✅"
+                  },
+                  {
+                        "word": "no",
+                        "emoji": "❌"
+                  }
+            ]
+      },
+      {
+            "name": "Verbs",
+            "words": [
+                  {
+                        "word": "be",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "am",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "is",
+                        "emoji": "🙂"
+                  },
+                  {
+                        "word": "are",
+                        "emoji": "👥"
+                  },
+                  {
+                        "word": "go",
+                        "emoji": "➡️"
+                  },
+                  {
+                        "word": "come",
+                        "emoji": "👋"
+                  },
+                  {
+                        "word": "do",
+                        "emoji": "✅"
+                  },
+                  {
+                        "word": "make",
+                        "emoji": "🛠️"
+                  },
+                  {
+                        "word": "get",
+                        "emoji": "🤲"
+                  },
+                  {
+                        "word": "put",
+                        "emoji": "📥"
+                  },
+                  {
+                        "word": "let",
+                        "emoji": "👍"
+                  },
+                  {
+                        "word": "use",
+                        "emoji": "🛠️"
+                  },
+                  {
+                        "word": "find",
+                        "emoji": "🔎"
+                  },
+                  {
+                        "word": "ask",
+                        "emoji": "❓"
+                  },
+                  {
+                        "word": "tell",
+                        "emoji": "💬"
+                  },
+                  {
+                        "word": "call",
+                        "emoji": "📞"
+                  },
+                  {
+                        "word": "try",
+                        "emoji": "💪"
+                  },
+                  {
+                        "word": "need",
+                        "emoji": "🙏"
+                  },
+                  {
+                        "word": "want",
+                        "emoji": "⭐"
+                  },
+                  {
+                        "word": "like",
+                        "emoji": "👍"
+                  },
+                  {
+                        "word": "have",
+                        "emoji": "🤲"
+                  },
+                  {
+                        "word": "see",
+                        "emoji": "👀"
+                  },
+                  {
+                        "word": "look",
+                        "emoji": "👀"
+                  },
+                  {
+                        "word": "say",
+                        "emoji": "💬"
+                  },
+                  {
+                        "word": "play",
+                        "emoji": "🎮"
+                  },
+                  {
+                        "word": "read",
+                        "emoji": "📖"
+                  },
+                  {
+                        "word": "write",
+                        "emoji": "✏️"
+                  },
+                  {
+                        "word": "draw",
+                        "emoji": "🎨"
+                  },
+                  {
+                        "word": "jump",
+                        "emoji": "🦘"
+                  },
+                  {
+                        "word": "run",
+                        "emoji": "🏃"
+                  }
+            ]
+      },
+      {
+            "name": "Kitchen",
+            "words": [
+                  {
+                        "word": "cup",
+                        "emoji": "☕"
+                  },
+                  {
+                        "word": "mug",
+                        "emoji": "☕"
+                  },
+                  {
+                        "word": "plate",
+                        "emoji": "🍽️"
+                  },
+                  {
+                        "word": "bowl",
+                        "emoji": "🥣"
+                  },
+                  {
+                        "word": "fork",
+                        "emoji": "🍴"
+                  },
+                  {
+                        "word": "spoon",
+                        "emoji": "🥄"
+                  },
+                  {
+                        "word": "knife",
+                        "emoji": "🔪"
+                  },
+                  {
+                        "word": "pan",
+                        "emoji": "🍳"
+                  },
+                  {
+                        "word": "pot",
+                        "emoji": "🍲"
+                  },
+                  {
+                        "word": "oven",
+                        "emoji": "♨️"
+                  },
+                  {
+                        "word": "stove",
+                        "emoji": "🔥"
+                  },
+                  {
+                        "word": "sink",
+                        "emoji": "🚰"
+                  },
+                  {
+                        "word": "soap",
+                        "emoji": "🧼"
+                  },
+                  {
+                        "word": "towel",
+                        "emoji": "🧻"
+                  },
+                  {
+                        "word": "fridge",
+                        "emoji": "🧊"
+                  },
+                  {
+                        "word": "table",
+                        "emoji": "🪑"
+                  },
+                  {
+                        "word": "chair",
+                        "emoji": "🪑"
+                  },
+                  {
+                        "word": "cook",
+                        "emoji": "🧑‍🍳"
+                  },
+                  {
+                        "word": "bake",
+                        "emoji": "🥐"
+                  },
+                  {
+                        "word": "mix",
+                        "emoji": "🥣"
+                  },
+                  {
+                        "word": "cut",
+                        "emoji": "🔪"
+                  },
+                  {
+                        "word": "wash",
+                        "emoji": "🧼"
+                  },
+                  {
+                        "word": "eat",
+                        "emoji": "🍽️"
+                  },
+                  {
+                        "word": "drink",
+                        "emoji": "🥤"
+                  },
+                  {
+                        "word": "salt",
+                        "emoji": "🧂"
+                  },
+                  {
+                        "word": "sugar",
+                        "emoji": "🍬"
+                  },
+                  {
+                        "word": "tea",
+                        "emoji": "🍵"
+                  },
+                  {
+                        "word": "juice",
+                        "emoji": "🧃"
+                  },
+                  {
+                        "word": "water",
+                        "emoji": "💧"
+                  },
+                  {
+                        "word": "snack",
+                        "emoji": "🍪"
+                  }
+            ]
+      },
+      {
+            "name": "Garden",
+            "words": [
+                  {
+                        "word": "seed",
+                        "emoji": "🌰"
+                  },
+                  {
+                        "word": "plant",
+                        "emoji": "🪴"
+                  },
+                  {
+                        "word": "flower",
+                        "emoji": "🌸"
+                  },
+                  {
+                        "word": "rose",
+                        "emoji": "🌹"
+                  },
+                  {
+                        "word": "tree",
+                        "emoji": "🌳"
+                  },
+                  {
+                        "word": "leaf",
+                        "emoji": "🍃"
+                  },
+                  {
+                        "word": "grass",
+                        "emoji": "🌱"
+                  },
+                  {
+                        "word": "soil",
+                        "emoji": "🟫"
+                  },
+                  {
+                        "word": "water",
+                        "emoji": "💧"
+                  },
+                  {
+                        "word": "sun",
+                        "emoji": "☀️"
+                  },
+                  {
+                        "word": "bug",
+                        "emoji": "🐞"
+                  },
+                  {
+                        "word": "bee",
+                        "emoji": "🐝"
+                  },
+                  {
+                        "word": "worm",
+                        "emoji": "🪱"
+                  },
+                  {
+                        "word": "bird",
+                        "emoji": "🐦"
+                  },
+                  {
+                        "word": "nest",
+                        "emoji": "🪺"
+                  },
+                  {
+                        "word": "pot",
+                        "emoji": "🪴"
+                  },
+                  {
+                        "word": "hose",
+                        "emoji": "💦"
+                  },
+                  {
+                        "word": "rake",
+                        "emoji": "🪠"
+                  },
+                  {
+                        "word": "spade",
+                        "emoji": "🪏"
+                  },
+                  {
+                        "word": "weed",
+                        "emoji": "🌿"
+                  },
+                  {
+                        "word": "apple",
+                        "emoji": "🍎"
+                  },
+                  {
+                        "word": "berry",
+                        "emoji": "🫐"
+                  },
+                  {
+                        "word": "carrot",
+                        "emoji": "🥕"
+                  },
+                  {
+                        "word": "corn",
+                        "emoji": "🌽"
+                  },
+                  {
+                        "word": "tomato",
+                        "emoji": "🍅"
+                  },
+                  {
+                        "word": "pumpkin",
+                        "emoji": "🎃"
+                  },
+                  {
+                        "word": "gate",
+                        "emoji": "🚪"
+                  },
+                  {
+                        "word": "fence",
+                        "emoji": "🚧"
+                  },
+                  {
+                        "word": "path",
+                        "emoji": "🛤️"
+                  },
+                  {
+                        "word": "bench",
+                        "emoji": "🪑"
+                  }
+            ]
+      }
+];
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const emojiEl = document.getElementById("emoji");
+    const answerEl = document.getElementById("answer");
+    const categoryNameEl = document.getElementById("categoryName");
+    const progressTextEl = document.getElementById("progressText");
+    const levelSelect = document.getElementById("levelSelect");
+    const messageEl = document.getElementById("message");
+
+    const colors = ["#4da3ff", "#8b6cff", "#ffb84d", "#49c26b", "#ff6ba6", "#40c4c8"];
+    const extraLetters = "abcdefghijklmnopqrstuvwxyz";
+
+    let levelIndex = 0;
+    let wordIndex = 0;
+    let balls = [];
+    let currentWord = "";
+    let currentEmoji = "";
+    let nextLetterIndex = 0;
+    let animationId = null;
+    let lastTime = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function chooseExtraLetters(word, count) {
+      const result = [];
+      while (result.length < count) {
+        const ch = extraLetters[Math.floor(Math.random() * extraLetters.length)];
+        if (!word.includes(ch) || Math.random() < 0.35) result.push(ch);
+      }
+      return result;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function createBalls() {
+      resizeCanvas();
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      balls = [];
+      const letters = [...currentWord.split(""), ...chooseExtraLetters(currentWord, Math.max(4, 9 - currentWord.length))];
+      shuffle(letters);
+
+      letters.forEach((letter, i) => {
+        const radius = Math.min(34, Math.max(26, w / 15));
+        let placed = false;
+        let x, y;
+
+        for (let tries = 0; tries < 200 && !placed; tries++) {
+          x = rand(radius + 10, w - radius - 10);
+          y = rand(radius + 10, h - radius - 10);
+          placed = balls.every(b => Math.hypot(b.x - x, b.y - y) > radius * 2.35);
+        }
+
+        if (!placed) {
+          x = rand(radius + 10, w - radius - 10);
+          y = rand(radius + 10, h - radius - 10);
+        }
+
+        balls.push({
+          letter,
+          x,
+          y,
+          vx: rand(-42, 42) || 22,
+          vy: rand(-42, 42) || -22,
+          r: radius,
+          color: colors[i % colors.length],
+          wrongFlash: 0,
+          goodFlash: 0,
+          angle: rand(-0.2, 0.2),
+          spin: rand(-0.4, 0.4)
+        });
+      });
+    }
+
+    function setupLevelSelect() {
+      levelSelect.innerHTML = "";
+      levels.forEach((level, i) => {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = `${i + 1}. ${level.name}`;
+        levelSelect.appendChild(opt);
+      });
+    }
+
+    function loadWord() {
+      const item = levels[levelIndex].words[wordIndex];
+      currentWord = item.word.toLowerCase();
+      currentEmoji = item.emoji;
+      nextLetterIndex = 0;
+
+      emojiEl.textContent = currentEmoji;
+      categoryNameEl.textContent = levels[levelIndex].name;
+      progressTextEl.textContent = `${wordIndex + 1} / ${levels[levelIndex].words.length}`;
+      levelSelect.value = levelIndex;
+
+      answerEl.innerHTML = "";
+      for (let i = 0; i < currentWord.length; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot.textContent = "";
+        answerEl.appendChild(slot);
+      }
+
+      createBalls();
+      speakWord(false);
+    }
+
+    function fillNextSlot(letter) {
+      const slot = answerEl.children[nextLetterIndex];
+      slot.textContent = letter.toUpperCase();
+      slot.classList.add("filled");
+      nextLetterIndex++;
+    }
+
+    function showMessage(text, good = true) {
+      messageEl.textContent = text;
+      messageEl.style.borderColor = good ? "var(--good)" : "var(--bad)";
+      messageEl.style.color = good ? "var(--good)" : "var(--bad)";
+      messageEl.classList.add("show");
+      setTimeout(() => messageEl.classList.remove("show"), 850);
+    }
+
+    function nextWord() {
+      wordIndex++;
+      if (wordIndex >= levels[levelIndex].words.length) {
+        wordIndex = 0;
+        levelIndex = (levelIndex + 1) % levels.length;
+        showMessage("New level! 🌟");
+      }
+      loadWord();
+    }
+
+    function prevWord() {
+      wordIndex--;
+      if (wordIndex < 0) {
+        levelIndex = (levelIndex - 1 + levels.length) % levels.length;
+        wordIndex = levels[levelIndex].words.length - 1;
+      }
+      loadWord();
+    }
+
+    function handleCanvasClick(e) {
+      const rect = canvas.getBoundingClientRect();
+      const pointX = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+      const pointY = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+
+      for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+        if (Math.hypot(b.x - pointX, b.y - pointY) <= b.r) {
+          const needed = currentWord[nextLetterIndex];
+
+          if (b.letter === needed) {
+            b.goodFlash = 1;
+            fillNextSlot(b.letter);
+            balls.splice(i, 1);
+            playTone(660, 0.08, "sine");
+
+            if (nextLetterIndex >= currentWord.length) {
+              showMessage("Great! 🎉");
+              speakWord(true);
+              setTimeout(nextWord, 1200);
+            }
+          } else {
+            b.wrongFlash = 1;
+            playTone(180, 0.12, "sawtooth");
+          }
+
+          break;
+        }
+      }
+    }
+
+    function updatePhysics(dt) {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      balls.forEach(b => {
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.angle += b.spin * dt;
+
+        if (b.x - b.r < 0) {
+          b.x = b.r;
+          b.vx = Math.abs(b.vx);
+        }
+        if (b.x + b.r > w) {
+          b.x = w - b.r;
+          b.vx = -Math.abs(b.vx);
+        }
+        if (b.y - b.r < 0) {
+          b.y = b.r;
+          b.vy = Math.abs(b.vy);
+        }
+        if (b.y + b.r > h) {
+          b.y = h - b.r;
+          b.vy = -Math.abs(b.vy);
+        }
+
+        b.wrongFlash = Math.max(0, b.wrongFlash - dt * 4.5);
+        b.goodFlash = Math.max(0, b.goodFlash - dt * 6);
+      });
+
+      for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+          const a = balls[i];
+          const b = balls[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy);
+          const minDist = a.r + b.r;
+
+          if (dist > 0 && dist < minDist) {
+            const nx = dx / dist;
+            const ny = dy / dist;
+            const overlap = minDist - dist;
+
+            a.x -= nx * overlap / 2;
+            a.y -= ny * overlap / 2;
+            b.x += nx * overlap / 2;
+            b.y += ny * overlap / 2;
+
+            const tx = -ny;
+            const ty = nx;
+
+            const dpTanA = a.vx * tx + a.vy * ty;
+            const dpTanB = b.vx * tx + b.vy * ty;
+            const dpNormA = a.vx * nx + a.vy * ny;
+            const dpNormB = b.vx * nx + b.vy * ny;
+
+            a.vx = tx * dpTanA + nx * dpNormB;
+            a.vy = ty * dpTanA + ny * dpNormB;
+            b.vx = tx * dpTanB + nx * dpNormA;
+            b.vy = ty * dpTanB + ny * dpNormA;
+          }
+        }
+      }
+    }
+
+    function drawBall(b) {
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.angle);
+
+      let fill = b.color;
+      if (b.wrongFlash > 0) fill = "#ff304f";
+      if (b.goodFlash > 0) fill = "#49c26b";
+
+      ctx.beginPath();
+      ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = fill;
+      ctx.fill();
+
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "white";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(-b.r * 0.28, -b.r * 0.28, b.r * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.38)";
+      ctx.fill();
+
+      if (b.wrongFlash > 0) {
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(255,255,255,0.95)";
+        ctx.beginPath();
+        ctx.moveTo(-b.r * 0.32, -b.r * 0.32);
+        ctx.lineTo(b.r * 0.32, b.r * 0.32);
+        ctx.moveTo(b.r * 0.32, -b.r * 0.32);
+        ctx.lineTo(-b.r * 0.32, b.r * 0.32);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "white";
+        ctx.font = `900 ${Math.floor(b.r * 1.35)}px system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(b.letter.toUpperCase(), 0, 2);
+      }
+
+      ctx.restore();
+    }
+
+    function render(ts) {
+      if (!lastTime) lastTime = ts;
+      const dt = Math.min(0.033, (ts - lastTime) / 1000);
+      lastTime = ts;
+
+      updatePhysics(dt);
+
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      balls.forEach(drawBall);
+      animationId = requestAnimationFrame(render);
+    }
+
+    let audioCtx = null;
+    function playTone(freq, dur, type) {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.value = 0.07;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.stop(audioCtx.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function speakWord(force = false) {
+      if (!("speechSynthesis" in window)) return;
+      if (!force && window.innerWidth < 700) return;
+
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(currentWord);
+      utter.lang = "en-US";
+      utter.rate = 0.78;
+      utter.pitch = 1.1;
+      window.speechSynthesis.speak(utter);
+    }
+
+    document.getElementById("nextBtn").addEventListener("click", nextWord);
+    document.getElementById("prevBtn").addEventListener("click", prevWord);
+    document.getElementById("restartBtn").addEventListener("click", loadWord);
+    document.getElementById("speakBtn").addEventListener("click", () => speakWord(true));
+    levelSelect.addEventListener("change", () => {
+      levelIndex = Number(levelSelect.value);
+      wordIndex = 0;
+      loadWord();
+    });
+
+    canvas.addEventListener("click", handleCanvasClick);
+    canvas.addEventListener("touchstart", e => {
+      e.preventDefault();
+      handleCanvasClick(e);
+    }, { passive: false });
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      createBalls();
+    });
+
+    setupLevelSelect();
+    loadWord();
+    animationId = requestAnimationFrame(render);
+  </script>
+</body>
+</html>
