@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>English Memory Match 4x4</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:linear-gradient(145deg,#8ed8ff,#fff0a8);display:flex;align-items:center;justify-content:center;color:#263238;overflow:hidden}
+.game{width:min(920px,100vw);height:min(760px,100vh);padding:12px;display:grid;grid-template-rows:auto 1fr auto;gap:10px}
+.top{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;background:rgba(255,255,255,.84);border:4px solid white;border-radius:26px;padding:10px 14px;box-shadow:0 10px 24px rgba(0,0,0,.14)}
+.title{font-size:clamp(20px,4vw,34px);font-weight:1000;white-space:nowrap}
+.level{text-align:center;font-size:clamp(16px,3vw,24px);font-weight:1000;color:#2c6fc9}
+.score{text-align:right;font-size:clamp(14px,2.5vw,20px);font-weight:900}
+.wrap{position:relative;min-height:0;background:rgba(255,255,255,.55);border:5px solid white;border-radius:34px;padding:12px;box-shadow:0 14px 34px rgba(0,0,0,.14)}
+.board{height:100%;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:12px}
+.card{border:0;padding:0;cursor:pointer;border-radius:24px;background:transparent;min-width:0;min-height:0}
+.inner{position:relative;width:100%;height:100%}
+.face{position:absolute;inset:0;border-radius:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 0 rgba(0,0,0,.12),0 12px 22px rgba(0,0,0,.12);border:5px solid white;overflow:hidden}
+.front{display:none;background:white;color:#263238;flex-direction:column;gap:4px}
+.back{display:flex;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.45),transparent 22%),linear-gradient(145deg,#8b6cff,#4da3ff);color:white;font-size:clamp(34px,6vw,60px);font-weight:1000}
+.card.open .back,.card.matched .back{display:none}
+.card.open .front,.card.matched .front{display:flex}
+.front.image{background:linear-gradient(145deg,#fff8d7,#eaf8ff);font-size:clamp(50px,10vw,100px)}
+.front.word{background:linear-gradient(145deg,#fff,#effff2);font-size:clamp(24px,5vw,48px);font-weight:1000;text-transform:uppercase;color:#24884e;letter-spacing:.5px}
+.card.matched .face{border-color:#37c871;box-shadow:0 8px 0 #219f54,0 12px 20px rgba(0,0,0,.12)}
+.card.wrong .face{border-color:#ff5d73;animation:shake .32s ease-in-out}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.overlay{position:absolute;inset:0;border-radius:30px;background:rgba(255,255,255,.94);display:none;align-items:center;justify-content:center;padding:20px;z-index:10;text-align:center;overflow:auto}
+.overlay.show{display:flex}
+.result{background:white;border:5px solid #37c871;border-radius:34px;padding:20px;box-shadow:0 16px 40px rgba(0,0,0,.2);max-width:680px;width:100%}
+.resultTitle{font-size:clamp(28px,6vw,52px);font-weight:1000;color:#37c871;line-height:1.05;margin-bottom:10px}
+.resultText{font-size:clamp(16px,3vw,24px);font-weight:900;margin-bottom:12px}
+.nameRow{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin:10px 0 14px}
+.nameInput{border:3px solid #d7efff;border-radius:16px;padding:10px 12px;font-size:16px;font-weight:900;min-width:220px;outline:none}
+.lbTitle{font-size:20px;font-weight:1000;margin:10px 0 6px;color:#2c6fc9}
+.lbStatus{font-size:13px;font-weight:800;color:#607d8b;margin:5px 0}
+.leaderboard{width:100%;border-collapse:separate;border-spacing:0 6px;font-weight:900;text-align:left}
+.leaderboard th{font-size:12px;color:#607d8b;padding:0 8px;text-transform:uppercase}
+.leaderboard td{background:#f4fbff;padding:8px;border-top:2px solid #d7efff;border-bottom:2px solid #d7efff}
+.leaderboard td:first-child{border-left:2px solid #d7efff;border-radius:12px 0 0 12px;text-align:center;width:44px}
+.leaderboard td:last-child{border-right:2px solid #d7efff;border-radius:0 12px 12px 0;text-align:center;width:70px}
+.bottom{background:rgba(255,255,255,.84);border:4px solid white;border-radius:24px;padding:10px;box-shadow:0 8px 20px rgba(0,0,0,.1);display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;font-weight:900}
+button.control,select{border:0;border-radius:17px;padding:11px 15px;font-size:16px;font-weight:900;background:#4da3ff;color:white;box-shadow:0 5px 0 #2776c9;cursor:pointer}
+button.green{background:#37c871;box-shadow:0 5px 0 #219f54}
+button.yellow{background:#ffd34f;color:#4b3b00;box-shadow:0 5px 0 #dfa719}
+select{background:white;color:#263238;border:3px solid #d7efff;box-shadow:none}
+button.control:active{transform:translateY(3px);box-shadow:0 2px 0 #2776c9}
+button.control:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:640px){
+.game{height:100vh;padding:7px;gap:7px}.top{grid-template-columns:1fr;text-align:center;gap:3px;padding:7px;border-radius:20px;border-width:3px}.title,.score{text-align:center}.wrap{border-radius:24px;padding:7px;border-width:3px}.board{gap:7px}.face{border-radius:17px;border-width:3px;box-shadow:0 5px 0 rgba(0,0,0,.12),0 8px 14px rgba(0,0,0,.12)}.front.word{font-size:clamp(20px,7vw,34px);letter-spacing:0}.front.image{font-size:clamp(42px,13vw,72px)}.bottom{padding:7px;gap:6px;border-width:3px}button.control,select{font-size:13px;padding:8px 9px}.result{padding:12px}.leaderboard td{font-size:12px;padding:6px 4px}.leaderboard th{font-size:10px;padding:0 4px}
+}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="top">
+    <div class="title">English Memory</div>
+    <div class="level"><div id="levelName"></div><div id="levelNum"></div></div>
+    <div class="score"><div>Ходы: <span id="moves">0</span></div><div>Найдено: <span id="pairs">0</span> / 8</div></div>
+  </div>
+  <div class="wrap">
+    <div class="board" id="board"></div>
+    <div class="overlay" id="overlay">
+      <div class="result">
+        <div class="resultTitle" id="resultTitle">Great!</div>
+        <div class="resultText" id="resultText"></div>
+        <div class="nameRow">
+          <input class="nameInput" id="playerName" maxlength="18" placeholder="Player name">
+          <button class="control green" id="saveScore">Save score</button>
+          <button class="control" id="overlayNext">Next level ▶</button>
+        </div>
+        <div class="lbTitle">🏆 Top 20 Leaderboard</div>
+        <div class="lbStatus" id="leaderboardStatus"></div>
+        <table class="leaderboard">
+          <thead><tr><th>#</th><th>Player</th><th>Category</th><th>Moves</th></tr></thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <button class="control" id="prev">◀ Назад</button>
+    <label>Уровень: <select id="levelSelect"></select></label>
+    <button class="control yellow" id="restart">↻ Заново</button>
+    <button class="control green" id="next">Вперёд ▶</button>
+  </div>
+</div>
+
+<!--
+Online leaderboard for GitHub Pages:
+1) Create a Firebase project.
+2) Add a Realtime Database.
+3) Replace the values below with your Firebase web app config.
+4) For a public kid-friendly prototype, start with simple test rules, then lock them down before production.
+
+Without Firebase config, the game still works, but leaderboard is local to the browser only.
+-->
+<script>
+window.LEADERBOARD_CONFIG = {
+  apiKey: "AIzaSyBW9dp0Mz6_1BO6Y_z3BMqtCRnWTfxUVsE",
+  authDomain: "memogame-ccca6.firebaseapp.com",
+  projectId: "memogame-ccca6",
+  storageBucket: "memogame-ccca6.firebasestorage.app",
+  messagingSenderId: "843235858730",
+  appId: "1:843235858730:web:060a41a83e7724288a6653"
+};
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+
+<script>
+const levels=[{"name":"Animals","ru":"Животные","words":[["cat","🐱"],["dog","🐶"],["pig","🐷"],["cow","🐮"],["fox","🦊"],["owl","🦉"],["bee","🐝"],["fish","🐟"],["duck","🦆"],["lion","🦁"],["frog","🐸"],["bear","🐻"]]},{"name":"Body","ru":"Части тела","words":[["eye","👁️"],["ear","👂"],["nose","👃"],["hand","✋"],["foot","🦶"],["leg","🦵"],["arm","💪"],["head","🙂"],["hair","💇"],["tooth","🦷"],["mouth","👄"],["face","😀"]]},{"name":"Food","ru":"Еда","words":[["egg","🥚"],["milk","🥛"],["cake","🍰"],["rice","🍚"],["fish","🐟"],["apple","🍎"],["bread","🍞"],["cheese","🧀"],["corn","🌽"],["soup","🍲"],["juice","🧃"],["pie","🥧"]]},{"name":"Colors","ru":"Цвета","words":[["red","🔴"],["blue","🔵"],["green","🟢"],["yellow","🟡"],["black","⚫"],["white","⚪"],["pink","🌸"],["gray","🐘"],["gold","⭐"],["brown","🟤"],["orange","🟠"],["purple","🟣"]]},{"name":"School","ru":"Школа","words":[["pen","🖊️"],["book","📘"],["bag","🎒"],["desk","🪑"],["star","⭐"],["bell","🔔"],["map","🗺️"],["glue","🧴"],["ruler","📏"],["paper","📄"],["pencil","✏️"],["clock","🕘"]]},{"name":"Numbers","ru":"Числа","words":[["one","1️⃣"],["two","2️⃣"],["three","3️⃣"],["four","4️⃣"],["five","5️⃣"],["six","6️⃣"],["seven","7️⃣"],["eight","8️⃣"],["nine","9️⃣"],["ten","🔟"],["zero","0️⃣"],["plus","➕"]]},{"name":"Home","ru":"Дом","words":[["bed","🛏️"],["lamp","💡"],["door","🚪"],["chair","🪑"],["table","🍽️"],["bath","🛁"],["key","🔑"],["sofa","🛋️"],["cup","☕"],["box","📦"],["phone","📱"],["plant","🪴"]]},{"name":"Toys","ru":"Игрушки","words":[["ball","⚽"],["doll","🪆"],["kite","🪁"],["car","🚗"],["train","🚂"],["robot","🤖"],["blocks","🧱"],["bear","🧸"],["game","🎮"],["plane","✈️"],["boat","⛵"],["drum","🥁"]]},{"name":"Nature","ru":"Природа","words":[["sun","☀️"],["moon","🌙"],["star","⭐"],["tree","🌳"],["leaf","🍃"],["rain","🌧️"],["snow","❄️"],["fire","🔥"],["rock","🪨"],["flower","🌼"],["cloud","☁️"],["water","💧"]]},{"name":"Actions","ru":"Действия","words":[["run","🏃"],["jump","🦘"],["swim","🏊"],["read","📖"],["write","✍️"],["sing","🎤"],["sleep","😴"],["eat","🍽️"],["drink","🥤"],["play","🎲"],["look","👀"],["draw","🎨"]]},{"name":"Fruit","ru":"Фрукты","words":[["apple","🍎"],["pear","🍐"],["banana","🍌"],["grape","🍇"],["melon","🍈"],["lemon","🍋"],["peach","🍑"],["cherry","🍒"],["berry","🫐"],["kiwi","🥝"],["plum","🟣"],["mango","🥭"]]},{"name":"Vegetables","ru":"Овощи","words":[["corn","🌽"],["carrot","🥕"],["potato","🥔"],["tomato","🍅"],["pepper","🫑"],["onion","🧅"],["pea","🟢"],["bean","🫘"],["cabbage","🥬"],["salad","🥗"],["garlic","🧄"],["pumpkin","🎃"]]},{"name":"Clothes","ru":"Одежда","words":[["hat","👒"],["cap","🧢"],["shirt","👕"],["dress","👗"],["sock","🧦"],["shoe","👟"],["coat","🧥"],["pants","👖"],["scarf","🧣"],["glove","🧤"],["boot","🥾"],["bag","👜"]]},{"name":"Weather","ru":"Погода","words":[["sunny","☀️"],["rain","🌧️"],["snow","❄️"],["wind","💨"],["cloud","☁️"],["storm","⛈️"],["hot","🥵"],["cold","🥶"],["warm","😊"],["cool","🧊"],["fog","🌫️"],["rainbow","🌈"]]},{"name":"Family","ru":"Семья","words":[["mom","👩"],["dad","👨"],["baby","👶"],["boy","👦"],["girl","👧"],["man","👨"],["woman","👩"],["grandma","👵"],["grandpa","👴"],["sister","👧"],["brother","👦"],["family","👨‍👩‍👧"]]},{"name":"Feelings","ru":"Чувства","words":[["happy","😀"],["sad","😢"],["angry","😠"],["scared","😱"],["sleepy","😴"],["sick","🤒"],["funny","😜"],["proud","😎"],["shy","😊"],["tired","🥱"],["calm","🙂"],["love","❤️"]]},{"name":"Transport","ru":"Транспорт","words":[["car","🚗"],["bus","🚌"],["train","🚂"],["plane","✈️"],["boat","⛵"],["bike","🚲"],["truck","🚚"],["taxi","🚕"],["ship","🚢"],["rocket","🚀"],["tram","🚋"],["scooter","🛴"]]},{"name":"Places","ru":"Места","words":[["home","🏠"],["school","🏫"],["park","🏞️"],["shop","🏬"],["zoo","🦁"],["farm","🚜"],["beach","🏖️"],["street","🛣️"],["bank","🏦"],["hospital","🏥"],["library","📚"],["pool","🏊"]]},{"name":"Kitchen","ru":"Кухня","words":[["cup","☕"],["fork","🍴"],["spoon","🥄"],["plate","🍽️"],["pan","🍳"],["pot","🍲"],["knife","🔪"],["bowl","🥣"],["glass","🥛"],["sink","🚰"],["oven","🔥"],["fridge","🧊"]]},{"name":"Bathroom","ru":"Ванная","words":[["soap","🧼"],["towel","🧺"],["bath","🛁"],["shower","🚿"],["brush","🪥"],["tooth","🦷"],["water","💧"],["mirror","🪞"],["comb","💇"],["sink","🚰"],["clean","✨"],["wash","🧽"]]},{"name":"Sea Animals","ru":"Морские животные","words":[["fish","🐟"],["whale","🐋"],["dolphin","🐬"],["crab","🦀"],["shrimp","🦐"],["octopus","🐙"],["seal","🦭"],["shark","🦈"],["shell","🐚"],["squid","🦑"],["turtle","🐢"],["starfish","⭐"]]},{"name":"Birds","ru":"Птицы","words":[["bird","🐦"],["duck","🦆"],["hen","🐔"],["chick","🐥"],["owl","🦉"],["eagle","🦅"],["penguin","🐧"],["swan","🦢"],["turkey","🦃"],["parrot","🦜"],["dove","🕊️"],["flamingo","🦩"]]},{"name":"Bugs","ru":"Насекомые","words":[["bee","🐝"],["ant","🐜"],["bug","🐞"],["fly","🪰"],["worm","🪱"],["snail","🐌"],["spider","🕷️"],["butterfly","🦋"],["mosquito","🦟"],["cricket","🦗"],["beetle","🪲"],["web","🕸️"]]},{"name":"Shapes","ru":"Фигуры","words":[["circle","⭕"],["square","⬛"],["star","⭐"],["heart","❤️"],["triangle","🔺"],["diamond","🔷"],["line","➖"],["cross","❌"],["arrow","➡️"],["oval","🥚"],["cube","🧊"],["ring","💍"]]},{"name":"Opposites","ru":"Противоположности","words":[["big","🐘"],["small","🐭"],["hot","🔥"],["cold","🧊"],["up","⬆️"],["down","⬇️"],["fast","🏎️"],["slow","🐢"],["day","☀️"],["night","🌙"],["yes","✅"],["no","❌"]]},{"name":"Verbs 2","ru":"Глаголы 2","words":[["sit","🪑"],["stand","🧍"],["walk","🚶"],["clap","👏"],["wave","👋"],["cook","🍳"],["wash","🧼"],["open","📖"],["close","🚪"],["push","👉"],["pull","🪢"],["kick","⚽"]]},{"name":"Classroom","ru":"Класс","words":[["teacher","👩‍🏫"],["student","🧑‍🎓"],["board","⬛"],["chalk","✏️"],["lesson","📖"],["test","📝"],["word","🔤"],["letter","🔠"],["number","🔢"],["paint","🎨"],["music","🎵"],["lunch","🥪"]]},{"name":"Sports","ru":"Спорт","words":[["ball","⚽"],["run","🏃"],["swim","🏊"],["jump","🦘"],["tennis","🎾"],["golf","⛳"],["ski","🎿"],["medal","🏅"],["goal","🥅"],["bike","🚲"],["skate","🛼"],["yoga","🧘"]]},{"name":"Music","ru":"Музыка","words":[["song","🎵"],["sing","🎤"],["drum","🥁"],["bell","🔔"],["guitar","🎸"],["piano","🎹"],["violin","🎻"],["horn","📯"],["note","🎶"],["dance","💃"],["radio","📻"],["music","🎼"]]},{"name":"Pets 2","ru":"Питомцы 2","words":[["puppy","🐶"],["kitten","🐱"],["hamster","🐹"],["rabbit","🐰"],["fish","🐟"],["bird","🐦"],["turtle","🐢"],["mouse","🐭"],["pony","🐴"],["snake","🐍"],["frog","🐸"],["lizard","🦎"]]},{"name":"Farm","ru":"Ферма","words":[["cow","🐮"],["pig","🐷"],["hen","🐔"],["goat","🐐"],["sheep","🐑"],["horse","🐴"],["duck","🦆"],["egg","🥚"],["milk","🥛"],["barn","🏠"],["hay","🌾"],["tractor","🚜"]]},{"name":"Zoo","ru":"Зоопарк","words":[["lion","🦁"],["tiger","🐯"],["bear","🐻"],["panda","🐼"],["zebra","🦓"],["monkey","🐵"],["giraffe","🦒"],["hippo","🦛"],["rhino","🦏"],["camel","🐫"],["koala","🐨"],["kangaroo","🦘"]]},{"name":"Space","ru":"Космос","words":[["sun","☀️"],["moon","🌙"],["star","⭐"],["earth","🌍"],["rocket","🚀"],["alien","👽"],["planet","🪐"],["sky","🌌"],["comet","☄️"],["ship","🛸"],["space","🌠"],["night","🌃"]]},{"name":"Time","ru":"Время","words":[["day","☀️"],["night","🌙"],["morning","🌅"],["noon","🕛"],["evening","🌆"],["clock","🕘"],["hour","⏰"],["today","📅"],["week","🗓️"],["month","📆"],["year","🎆"],["soon","⏳"]]},{"name":"Good Habits","ru":"Хорошие привычки","words":[["share","🤝"],["help","🙋"],["clean","✨"],["brush","🪥"],["listen","👂"],["read","📖"],["smile","😊"],["sleep","😴"],["eat","🍽️"],["wash","🧼"],["thank","🙏"],["care","❤️"]]},{"name":"Party","ru":"Праздник","words":[["cake","🎂"],["gift","🎁"],["balloon","🎈"],["music","🎵"],["dance","💃"],["hat","🥳"],["candle","🕯️"],["star","⭐"],["smile","😀"],["clap","👏"],["game","🎲"],["card","💌"]]},{"name":"Jobs","ru":"Профессии","words":[["doctor","👩‍⚕️"],["teacher","👩‍🏫"],["cook","👨‍🍳"],["pilot","👩‍✈️"],["farmer","🧑‍🌾"],["artist","👩‍🎨"],["singer","🎤"],["police","👮"],["worker","👷"],["driver","🚗"],["nurse","🧑‍⚕️"],["fireman","👨‍🚒"]]},{"name":"Safety","ru":"Безопасность","words":[["stop","🛑"],["go","🟢"],["look","👀"],["listen","👂"],["help","🆘"],["safe","✅"],["cross","🚸"],["helmet","⛑️"],["light","🚦"],["slow","🐢"],["care","❤️"],["home","🏠"]]},{"name":"Feelings 2","ru":"Чувства 2","words":[["kind","😊"],["brave","🦁"],["glad","😄"],["mad","😡"],["quiet","🤫"],["loud","📣"],["nice","👍"],["sorry","🙏"],["busy","🧰"],["ready","✅"],["alone","🧍"],["together","👫"]]},{"name":"Easy Words","ru":"Простые слова","words":[["me","🙂"],["you","👉"],["we","👫"],["it","🎲"],["my","❤️"],["to","➡️"],["in","📥"],["on","🔛"],["is","✅"],["am","🙋"],["can","💪"],["see","👀"]]},{"name":"Reading","ru":"Чтение","words":[["a","🔤"],["the","📖"],["and","➕"],["book","📘"],["page","📄"],["word","🔠"],["letter","🔡"],["story","📚"],["read","📖"],["line","➖"],["name","🏷️"],["sound","🔊"]]}];
+const board=document.getElementById("board"),levelName=document.getElementById("levelName"),levelNum=document.getElementById("levelNum"),movesEl=document.getElementById("moves"),pairsEl=document.getElementById("pairs"),overlay=document.getElementById("overlay"),resultTitle=document.getElementById("resultTitle"),resultText=document.getElementById("resultText"),levelSelect=document.getElementById("levelSelect"),playerNameEl=document.getElementById("playerName"),saveScoreBtn=document.getElementById("saveScore"),leaderboardBody=document.getElementById("leaderboardBody"),leaderboardStatus=document.getElementById("leaderboardStatus");
+let levelIndex=0,cards=[],opened=[],moves=0,matched=0,totalPairs=8,currentResult=null,scoreSaved=false,db=null,onlineLeaderboard=false;
+const LOCAL_KEY="englishMemoryLeaderboardTop20";
+
+function hasFirebaseConfig() {
+  const c=window.LEADERBOARD_CONFIG||{};
+  return c.apiKey && !String(c.apiKey).startsWith("PASTE_") && c.databaseURL && !String(c.databaseURL).includes("PASTE_");
+}
+function initLeaderboard() {
+  try {
+    if (hasFirebaseConfig() && window.firebase) {
+      firebase.initializeApp(window.LEADERBOARD_CONFIG);
+      db=firebase.database();
+      onlineLeaderboard=true;
+      leaderboardStatus.textContent="Online leaderboard is active.";
+    } else {
+      leaderboardStatus.textContent="Local leaderboard only. Add Firebase config for shared online scores.";
+    }
+  } catch(e) {
+    onlineLeaderboard=false;
+    db=null;
+    leaderboardStatus.textContent="Leaderboard is local because Firebase did not start.";
+  }
+}
+function cleanName(name) {
+  return String(name||"Player").trim().replace(/[<>]/g,"").slice(0,18) || "Player";
+}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function setupSelect(){levelSelect.innerHTML="";levels.forEach((l,i)=>{let o=document.createElement("option");o.value=i;o.textContent=(i+1)+". "+l.ru;levelSelect.appendChild(o)})}
+function deck(){let d=[];shuffle(levels[levelIndex].words).slice(0,totalPairs).forEach(([word,emoji])=>{d.push({id:word,kind:"image",value:emoji});d.push({id:word,kind:"word",value:word})});return shuffle(d)}
+function clearWrongOpenCards() {
+  opened.forEach(x=>x.btn.classList.remove("open","wrong"));
+  opened=[];
+}
+function render(){
+ overlay.classList.remove("show");board.innerHTML="";cards=deck();opened=[];moves=0;matched=0;currentResult=null;scoreSaved=false;saveScoreBtn.disabled=false;
+ let l=levels[levelIndex];levelName.textContent=l.ru+" / "+l.name;levelNum.textContent="Level "+(levelIndex+1)+" / "+levels.length;movesEl.textContent=moves;pairsEl.textContent=matched;levelSelect.value=levelIndex;
+ cards.forEach((c,i)=>{let btn=document.createElement("button");btn.className="card";btn.dataset.index=i;
+ let cls=c.kind==="image"?"image":"word";
+ btn.innerHTML='<div class="inner"><div class="face back">?</div><div class="face front '+cls+'">'+c.value+'</div></div>';
+ btn.onclick=()=>clickCard(btn);board.appendChild(btn)});
+}
+function clickCard(btn){
+ let i=+btn.dataset.index,c=cards[i];if(c.matched||btn.classList.contains("open"))return;
+ if(opened.length===2) clearWrongOpenCards();
+ btn.classList.add("open");
+ if(c.kind==="word") speakWord(c.value);
+ opened.push({btn,c});
+ if(opened.length===2){moves++;movesEl.textContent=moves;checkPair()}
+}
+function checkPair(){
+ let [a,b]=opened,ok=a.c.id===b.c.id&&a.c.kind!==b.c.kind;
+ if(ok){
+   a.c.matched=b.c.matched=true;a.btn.classList.add("matched");b.btn.classList.add("matched");opened=[];matched++;pairsEl.textContent=matched;tone(660,.09,"sine");
+   if(matched>=totalPairs)setTimeout(showResult,300)
+ } else {
+   a.btn.classList.add("wrong");b.btn.classList.add("wrong");tone(170,.13,"sawtooth");
+   // Wrong pair remains open. It closes only when player clicks another card.
+ }
+}
+async function showResult(){
+ let title=moves<=10?"Perfect! 🌟":moves<=16?"Great! 🎉":"Good job! 👍";
+ const l=levels[levelIndex];
+ currentResult={player:"",category:l.name,categoryRu:l.ru,moves:moves,createdAt:Date.now()};
+ resultTitle.textContent=title;resultText.textContent='Уровень «'+l.ru+'» пройден за '+moves+' ходов';overlay.classList.add("show");speakSentence("Great. "+moves+" moves.");
+ await renderLeaderboard();
+}
+function sortScores(list) {
+  return list.sort((a,b)=>(Number(a.moves)||9999)-(Number(b.moves)||9999) || (Number(b.createdAt)||0)-(Number(a.createdAt)||0)).slice(0,20);
+}
+async function getScores() {
+  if (onlineLeaderboard && db) {
+    const snap=await db.ref("leaderboard").once("value");
+    const val=snap.val()||{};
+    return Object.values(val);
+  }
+  return JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");
+}
+async function setScoresLocal(scores) {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(sortScores(scores)));
+}
+async function saveScore() {
+  if(!currentResult || scoreSaved) return;
+  const entry={...currentResult, player:cleanName(playerNameEl.value)};
+  scoreSaved=true;saveScoreBtn.disabled=true;
+  if (onlineLeaderboard && db) {
+    const ref=db.ref("leaderboard").push();
+    await ref.set(entry);
+    const scores=sortScores(await getScores());
+    const updates={};
+    const snap=await db.ref("leaderboard").once("value");
+    snap.forEach(child=>{
+      const val=child.val();
+      const keep=scores.some(s=>s.createdAt===val.createdAt && s.player===val.player && Number(s.moves)===Number(val.moves));
+      if(!keep) updates[child.key]=null;
+    });
+    await db.ref("leaderboard").update(updates);
+  } else {
+    const scores=await getScores();
+    scores.push(entry);
+    await setScoresLocal(scores);
+  }
+  await renderLeaderboard();
+}
+async function renderLeaderboard() {
+  let scores=[];
+  try {
+    scores=sortScores(await getScores());
+  } catch(e) {
+    leaderboardStatus.textContent="Could not load online leaderboard. Showing local fallback.";
+    onlineLeaderboard=false;db=null;scores=sortScores(await getScores());
+  }
+  leaderboardBody.innerHTML="";
+  if(!scores.length) {
+    leaderboardBody.innerHTML='<tr><td colspan="4" style="text-align:center;border-radius:12px;border:2px solid #d7efff">No scores yet</td></tr>';
+    return;
+  }
+  scores.forEach((s,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML='<td>'+(i+1)+'</td><td>'+escapeHtml(s.player||"Player")+'</td><td>'+escapeHtml(s.category||"")+'</td><td>'+Number(s.moves||0)+'</td>';
+    leaderboardBody.appendChild(tr);
+  });
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function nextLevel(){levelIndex=(levelIndex+1)%levels.length;render()}
+function prevLevel(){levelIndex=(levelIndex-1+levels.length)%levels.length;render()}
+let audioCtx=null;function tone(freq,dur,type){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function speakWord(word){speakSentence(word)}
+function speakSentence(text){if(!("speechSynthesis"in window))return;window.speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=.82;u.pitch=1.05;window.speechSynthesis.speak(u)}
+document.getElementById("restart").onclick=render;document.getElementById("next").onclick=nextLevel;document.getElementById("prev").onclick=prevLevel;document.getElementById("overlayNext").onclick=nextLevel;saveScoreBtn.onclick=saveScore;
+levelSelect.onchange=()=>{levelIndex=+levelSelect.value;render()};
+initLeaderboard();setupSelect();render();renderLeaderboard();
+</script>
+</body>
+</html>
